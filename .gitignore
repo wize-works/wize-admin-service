@@ -56,3 +56,6 @@ pnpm-debug.log*
 # Optional: OS-specific files
 .DS_Store
 Thumbs.db
+
+# Sentry Config File
+.env.sentry-build-plugin
