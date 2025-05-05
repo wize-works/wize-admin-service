@@ -10,15 +10,15 @@ interface SidebarCardProps {
 }
 
 export default function SidebarCard({ title, href, activePaths = [] }: SidebarCardProps) {
-  const pathname = usePathname(); // Get the current route
+  const pathname = usePathname();
 
   // Check if the current route matches the href or any of the activePaths
   const isActive = pathname === href || activePaths.some((path) => pathname.startsWith(path));
 
   return (
-    <Link href={href}>
+    <Link href={href} className="block w-full">
       <div
-        className={`p-4 rounded-lg shadow-md cursor-pointer ${
+        className={`p-4 rounded-lg shadow-md cursor-pointer mb-2 ${
           isActive ? "bg-blue-500 text-white" : "bg-slate-400 text-gray-800"
         }`}
       >

@@ -1,3 +1,5 @@
+"use client";
+
 import SidebarCard from "./sidebar-card";
 import Image from "next/image"; // Import the Image component
 
@@ -22,7 +24,7 @@ export default function Sidebar() {
 
       {/* Sidebar Content */}
       <SidebarCard title="Dashboard" href="/" />
-      <SidebarCard title="Database Tools" href="/databases" />
+      <SidebarCard title="Databases" href="/databases" activePaths={["/databases", "/tables", "/fields"]} />
     </div>
   );
 }
