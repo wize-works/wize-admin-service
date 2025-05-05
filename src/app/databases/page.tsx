@@ -2,7 +2,6 @@ import { FetchDatabaseNames } from "../service-clients/wize-database-service-cli
 import Link from "next/link";
 
 export default async function DatabasesPage() {
-  // Fetch the list of database names
   const databaseNames = await FetchDatabaseNames();
 
   return (

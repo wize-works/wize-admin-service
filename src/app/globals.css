@@ -47,3 +47,19 @@ body {
   background-color: #9ca3af; /* Tailwind's bg-gray-400 */
   cursor: not-allowed;
 }
+
+.color-primary {
+  color: #FF9933; /* Tailwind's text-blue-500 */
+}
+
+.color-primary-content {
+  color:  #1B1C1E;
+}
+
+.color-secondary {
+  color: #3388BB; /* Tailwind's text-blue-500 */
+}
+
+.color-secondary-content {
+  color: #FFFFFF;
+}
