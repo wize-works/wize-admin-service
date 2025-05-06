@@ -3,7 +3,7 @@
 import { useState } from "react";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton"; // Import the button
 
-export default function FetchTableDataButton({ databaseName, tableName }: { databaseName: string; tableName: string }) {
+export default function FetchTableDataButton({ databaseName, tableName, tenantId }: { databaseName: string; tableName: string; tenantId: string }) {
   const [tableData, setTableData] = useState<any[]>([]); // State to store fetched table data
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
@@ -12,7 +12,10 @@ export default function FetchTableDataButton({ databaseName, tableName }: { data
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}`);
+      // Update the API call to include the tenantId parameter
+      const response = await fetch(
+        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&tenantId=${encodeURIComponent(tenantId)}`
+      );
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
