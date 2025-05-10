@@ -1,12 +1,11 @@
 import { FetchFieldNames, FetchClientKeys } from "../service-clients/wize-database-service-client";
 import FetchTableDataButton from "./FetchTableDataButton"; // Import the Client Component
 import SelectList from "../../components/selectList"; // Import the SelectList component
-import Link from "next/link";
 
-export default async function FieldsPage({ searchParams }: { searchParams: { db?: string; table?: string; option?: string } }) {
+export default async function FieldsPage({ searchParams }: { searchParams: { db?: string; table?: string; identityId?: string } }) {
   const databaseName = searchParams.db;
   const tableName = searchParams.table;
-  const selectedOption = searchParams.option;
+  const selectedOption = searchParams.identityId;
 
   // Fetch client keys and transform them into options for the dropdown
   const clientKeys = await FetchClientKeys();
@@ -37,7 +36,7 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
       <SelectList
         options={selectListItems}
         selectedValue={selectedOption}
-        name="option"
+        name="identityId"
         label="Client Application:"
       />
       
@@ -57,20 +56,13 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
               ))}
             </ul>
             <div className="mt-4">
-              {/* Pass the selectedOption (tenantId) to the FetchTableDataButton */}
+              {/* Pass the selectedOption (schemaId) to the FetchTableDataButton */}
               <FetchTableDataButton 
                 databaseName={databaseName} 
                 tableName={tableName} 
-                tenantId={selectedOption} 
+                identityId={selectedOption}
+                makeIdLinkable={true} // Add new prop to indicate IDs should be linkable
               />
-            </div>
-            <div className="mt-4">
-              <Link
-                href={`/tables?db=${encodeURIComponent(databaseName)}&option=${encodeURIComponent(selectedOption)}`}
-                className="text-blue-500 hover:underline"
-              >
-                Back to Tables
-              </Link>
             </div>
           </div>
         </>

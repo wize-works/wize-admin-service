@@ -1,4 +1,7 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
+import { config } from "process";
+// Add source-map-support for better debugging
+import 'source-map-support/register';
 
 // Load the MongoDB connection string from the environment variables
 const uri = process.env.MONGO_URI || ""; // Ensure this is defined in your .env file
@@ -61,24 +64,15 @@ export async function FetchClientKeys(): Promise<{ [key: string]: string }> {
     const database = mongoClient.db("wize-identity");
     const collection = database.collection("tenants");
 
-    if (isDebug) console.log("FetchClientKeys: Querying tenants collection");
-
-    // Query the collection and project the needed fields
-    // Note: No need to explicitly include _id as MongoDB includes it by default
     const clientKeys = await collection
-      .find({}, { projection: { clientApp: 1, tenantId: 1 } }).toArray();
-
-    if (isDebug) {
-      console.log(`FetchClientKeys: Found ${clientKeys.length} tenant records`);
-      console.log("Raw tenant records:", JSON.stringify(clientKeys, null, 2));
-    }
+      .find({ clientApp: { $exists: true } }, { projection: { clientApp: 1, _id: 1 } }).toArray();
 
     // Transform the results into a dictionary using _id as key and clientApp as value
     const result: { [key: string]: string } = {};
+
+    console.log("FetchClientKeys: Found client keys:", clientKeys);
     
     clientKeys.forEach((clientKey, index) => {
-      // Debug each record
-      if (isDebug) console.log(`Record ${index}:`, clientKey);
       
       // Using _id as the dictionary key and clientApp as the value
       if (clientKey._id && clientKey.clientApp) {
@@ -177,27 +171,100 @@ export async function FetchFieldNames(databaseName: string, tableName: string) {
   }
 }
 
-// Function to fetch all data from a given table (collection)
-export async function QueryTable(databaseName: string, tableName: string, tenantId?: string) {
+// Function to fetch all data from a given table (collection) with optional schema-based filtering
+export async function QueryTable(databaseName: string, tableName: string, identityId?: object) {
   try {
     const mongoClient = await getMongoClient();
     
-    if (isDebug) console.log(`QueryTable: Connected to MongoDB, querying ${databaseName}.${tableName}${tenantId ? ` with tenantId: ${tenantId}` : ''}`);
+    if (isDebug) console.log(`QueryTable: Connected to MongoDB, querying ${databaseName}.${tableName}${identityId ? ` with schemaId: ${identityId}` : ''}`);
     
     const database = mongoClient.db(databaseName);
     const collection = database.collection(tableName);
-
-    // Build query object - filter by tenantId if provided
-    const query = tenantId ? { tenantId: tenantId } : {};
+    
+    // Build query object based on tenantId from schemaId
+    let query = {};
+    
+    if (identityId) {
+      if (isDebug) console.log(`QueryTable: Looking up tenantId for schemaId: ${identityId}`);
+      
+      // Get tenantId from configuration schema
+      const tenantId = await getTenantIdFromConfigurationId(identityId);
+      
+      if (tenantId) {
+        if (isDebug) console.log(`QueryTable: Found tenantId: ${tenantId}, will filter by this value`);
+        query = { tenantId: tenantId };
+      } else {
+        if (isDebug) console.log(`QueryTable: No tenantId found for schemaId: ${identityId}, returning all records`);
+      }
+    }
     
     // Fetch documents from the collection with optional filter
     const data = await collection.find(query).toArray();
     
-    if (isDebug) console.log(`QueryTable: Retrieved ${data.length} documents${tenantId ? ` with tenantId: ${tenantId}` : ''}`);
+    if (isDebug) {
+      const filterInfo = Object.keys(query).length > 0 ? ` with filter: ${JSON.stringify(query)}` : ' (no filters)';
+      console.log(`QueryTable: Retrieved ${data.length} documents from ${databaseName}.${tableName}${filterInfo}`);
+    }
 
-    return data; // Return the list of documents
+    return data;
   } catch (error) {
-    console.error(`Error fetching data for table "${tableName}" in database "${databaseName}"${tenantId ? ` with tenantId: ${tenantId}` : ''}:`, error);
+    console.error(`Error querying table "${tableName}" in database "${databaseName}"${identityId ? ` with schemaId: ${identityId}` : ''}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchRecordById(db: string, table: string, recordId: object, identityId: string) {
+  try{
+    const mongoClient = await getMongoClient();
+    
+    if (isDebug) console.log(`fetchRecordById: Connected to MongoDB, querying ${db}.${table} for recordId: ${recordId}`);
+    
+    const database = mongoClient.db(db);
+    const collection = database.collection(table);
+
+    const recordIdString = typeof recordId === 'string' ? recordId : (recordId as ObjectId).toString();
+    
+    const query = { _id: new ObjectId(recordIdString), tenantId: identityId };
+    
+    const record = await collection.findOne(query);
+    
+    if (isDebug) console.log(`fetchRecordById: Retrieved record with ID ${recordId}`);
+
+    return record;
+  } catch (error) {
+    // Fix the string template literal that had an extra } character
+    console.error(`Error fetching data for record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves the tenantId associated with a given object ID from the schemas configuration
+ * @param identityId - The object ID to look up
+ * @returns The associated tenantId as a string or null if not found
+ */
+export async function getTenantIdFromConfigurationId(identityId: object): Promise<string | null> {
+  try {
+    const identityIdString = typeof identityId === 'string' ? identityId : (identityId as ObjectId).toString();
+    const mongoClient = await getMongoClient();
+    
+    if (isDebug) console.log(`getTenantIdFromConfigurationId: Looking up configurationSchemaId for object ID: ${identityId}`);
+    
+    // Assuming the configuration is stored in a "wize-config" database with a "schemas" collection
+    const database = mongoClient.db("wize-identity");
+    const collection = database.collection("tenants");
+
+    const result = await collection.findOne({ "_id": new ObjectId(identityIdString) }, { projection: { tenantId: 1 } });
+
+    if (!result) {
+      if (isDebug) console.log(`getTenantIdFromConfigurationId: No tenantId found for object ID: ${identityId}`);
+      return null;
+    }
+
+    if (isDebug) console.log(`getTenantIdFromConfigurationId: Found tenantId: ${result.tenantId} for object ID: ${identityId}`);
+    return result.tenantId;
+  } catch (error) {
+    console.error(`Error getting tenantId for object ID "${identityId}":`, error);
     throw error;
   }
 }

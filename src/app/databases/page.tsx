@@ -12,7 +12,7 @@ export default async function DatabasesPage({ searchParams }: { searchParams: { 
   }));
 
   // Get the selected option from the query parameters
-  const selectedOption = searchParams.option;
+  const selectedOption = await searchParams.option;
 
   // Fetch database names only if an option is selected
   const databaseNames = selectedOption ? await FetchDatabaseNames() : [];

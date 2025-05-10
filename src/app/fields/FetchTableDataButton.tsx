@@ -3,7 +3,7 @@
 import { useState } from "react";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton"; // Import the button
 
-export default function FetchTableDataButton({ databaseName, tableName, tenantId }: { databaseName: string; tableName: string; tenantId: string }) {
+export default function FetchTableDataButton({ databaseName, tableName, identityId: selectedOption, makeIdLinkable }: { databaseName: string; tableName: string; identityId: string; makeIdLinkable: boolean }) {
   const [tableData, setTableData] = useState<any[]>([]); // State to store fetched table data
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
@@ -12,9 +12,9 @@ export default function FetchTableDataButton({ databaseName, tableName, tenantId
     setLoading(true);
     setError(null);
     try {
-      // Update the API call to include the tenantId parameter
+      // Update the API call to include the schemaId parameter
       const response = await fetch(
-        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&tenantId=${encodeURIComponent(tenantId)}`
+        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedOption)}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -35,7 +35,7 @@ export default function FetchTableDataButton({ databaseName, tableName, tenantId
     <div className="mt-4">
       {/* Buttons side by side */}
       <div className="flex space-x-4">
-        <FetchDatabaseTablesButton databaseName={databaseName} /> {/* Left button */}
+        <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} selectedOption={selectedOption} makeIdLinkable={true} /> {/* Left button */}
         <button
           onClick={handleFetchTableData}
           className="button"
@@ -64,11 +64,21 @@ export default function FetchTableDataButton({ databaseName, tableName, tenantId
               {tableData.map((row, index) => (
                 <tr key={index}>
                   {allFields.map((field) => (
+                    // Check if the field is an ID and should be linkable
                     <td key={field} className="border border-gray-300 px-4 py-2">
-                      {row[field] !== undefined ? (
-                        typeof row[field] === "object" ? JSON.stringify(row[field]) : row[field]
+                      {makeIdLinkable && field === "_id" ? (
+                        <a 
+                          href={`/api/details/${databaseName}/${tableName}/${selectedOption}/${row[field]}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {row[field]}
+                        </a>
                       ) : (
-                        "-"
+                        row[field] !== undefined ? (
+                          typeof row[field] === "object" ? JSON.stringify(row[field]) : row[field]
+                        ) : (
+                          "-"
+                        )
                       )}
                     </td>
                   ))}
