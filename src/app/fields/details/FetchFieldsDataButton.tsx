@@ -15,7 +15,7 @@ const FetchFieldsDataButton: React.FC<FetchFieldsDataButtonProps> = ({
   db,
   table,
   identityId,
-  className = "button btn bg-base-100 hover:bg-base-300",
+  className = "bpx-4 py-2 btn btn-primary",
   buttonText = "Back to Fields"
 }) => {
   const router = useRouter();

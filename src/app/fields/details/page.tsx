@@ -1,7 +1,6 @@
-import { ObjectId } from "mongodb";
 import { fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
-import Link from "next/link";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
+import EditRecordButton from "./EditRecordButton";
 
 type SearchParams = {
   db: string;
@@ -34,7 +33,9 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
     <div className="p-5">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Record Details</h1>
-        
+        <div className="flex space-x-3">
+          
+        </div>
       </div>
       
       <div className="mb-4">
@@ -47,8 +48,12 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
         db={db}
         table={table}
         identityId={identityId}
-        className="button btn bg-base-100 hover:bg-base-300 mb-4"
-        buttonText="Back to Fields"
+      />
+      <EditRecordButton
+        db={db}
+        table={table}
+        identityId={identityId}
+        recordId={recordId}
       />
       
       <div className="bg-base-100 shadow-md rounded-lg overflow-hidden">

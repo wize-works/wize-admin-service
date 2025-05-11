@@ -55,18 +55,17 @@ export default async function QueryTables({ searchParams }: { searchParams: { db
       {identityId && (
         <>
           <h2 className="text-xl font-bold mb-4 mt-4">Tables:</h2>
-          <ul className="space-y-2">
-            {tableNames.map((tableName) => (
-              <li key={tableName} className="p-2 rounded shadow">
-                <Link
-                  href={`/fields?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(identityId)}`}
-                  className="text-blue-500 hover:underline"
-                >
-                  {tableName}
-                </Link>
-              </li>
+          <div className="flex flex-col gap-2">
+            {tableNames.map((tableName, index) => (
+              <Link
+                key={tableName}
+                href={`/fields?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(identityId)}`}
+                className={`btn ${index % 2 === 0 ? 'btn-primary' : 'btn-secondary'} w-full text-left justify-start`}
+              >
+                {tableName}
+              </Link>
             ))}
-          </ul>
+          </div>
 
           <div className="mt-4">
             <FetchDatabasesButton />

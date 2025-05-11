@@ -31,18 +31,19 @@ export default async function DatabasesPage({ searchParams }: { searchParams: { 
 
       {/* Render the list only if an option is selected */}
       {selectedOption && (
-        <ul className="space-y-2 mt-4">
-          {databaseNames.map((dbName) => (
-            <li key={dbName} className="p-2 rounded shadow">
+        <div className="mt-4">
+          <h2 className="text-xl font-semibold mb-2">Available Databases:</h2>
+          <div className="flex flex-col gap-2">
+            {databaseNames.map((dbName, index) => (
               <Link
+                key={dbName}
                 href={`/tables?db=${encodeURIComponent(dbName)}&option=${encodeURIComponent(selectedOption)}`}
-                className="text-blue-500 hover:underline"
-              >
+                className={`btn ${index % 2 === 0 ? 'btn-primary' : 'btn-secondary'} w-full text-left justify-start`}>
                 {dbName}
               </Link>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

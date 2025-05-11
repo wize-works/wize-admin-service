@@ -13,7 +13,7 @@ export default function FetchDatabasesButton() {
   return (
     <button
       onClick={handleNavigate}
-      className="button px-4 btn bg-base-100 hover:bg-base-300 py-2 rounded "
+      className="px-4 py-2 btn btn-primary"
     >
       Databases View
     </button>

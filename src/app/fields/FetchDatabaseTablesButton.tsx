@@ -19,7 +19,7 @@ export default function FetchDatabaseTablesButton({ databaseName, selectedOption
   return (
     <button
       onClick={handleNavigate}
-      className="button btn bg-base-100 hover:bg-base-300"
+      className="px-4 py-2 btn btn-primary"
     >
       Tables View
     </button>

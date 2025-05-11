@@ -224,3 +224,27 @@ export async function getTenantIdFromConfigurationId(identityId: string): Promis
     }
   });
 }
+
+export async function GetIdentityKey(_id: string): Promise<string | null> {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try {
+      if (isDebug) console.log(`GetIdentityKey: Looking up identity key for object ID: ${_id}`);
+      
+      const database = mongoClient.db("wize-identity");
+      const collection = database.collection("tenants");
+
+      const result = await collection.findOne({ "_id": new ObjectId(_id) }, { projection: { key: 1 } });
+
+      if (!result) {
+        if (isDebug) console.log(`GetIdentityKey: No identity key found for object ID: ${_id}`);
+        return null;
+      }
+
+      if (isDebug) console.log(`GetIdentityKey: Found identity key: ${result.key} for object ID: ${_id}`);
+      return result.key;
+    } catch (error) {
+      console.error(`Error getting identity key for object ID "${_id}":`, error);
+      throw error;
+    }
+  });
+}

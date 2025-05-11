@@ -38,7 +38,7 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
         <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} selectedOption={selectedOption} makeIdLinkable={true} /> {/* Left button */}
         <button
           onClick={handleFetchTableData}
-          className="button btn bg-base-100 hover:bg-base-300"
+          className="px-4 py-2 btn btn-primary"
           disabled={loading}
         >
           {loading ? "Fetching..." : "Fetch Table Data"}
@@ -50,11 +50,11 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
       {tableData.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xl font-bold mb-2">Table Data:</h3>
-          <table className="table-auto border-collapse border border-gray-300 w-full">
-            <thead>
+          <table className="table-auto border-collapse w-full">
+            <thead className="bg-base-300">
               <tr>
                 {allFields.map((field) => (
-                  <th key={field} className="border border-gray-300 px-4 py-2 text-left">
+                  <th key={field} className="px-4 py-2 text-left border border-base-300">
                     {field}
                   </th>
                 ))}
@@ -63,13 +63,12 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
             <tbody>
               {tableData.map((row, index) => (
                 <tr key={index}>
-                  {allFields.map((field) => (
-                    // Check if the field is an ID and should be linkable
-                    <td key={field} className="border border-gray-300 px-4 py-2">
-                      {makeIdLinkable && field === "_id" ? (
+                  {allFields.map((field, fieldIndex) => (
+                    <td key={field} className="px-4 py-2 border border-base-200">
+                      {fieldIndex === 0 ? (
                         <a 
-                          href={`/api/details?db=${databaseName}&table=${tableName}&identityId=${selectedOption}&recordId=${row[field]}`}
-                          className="text-blue-600 hover:underline"
+                          href={`/fields/details?db=${databaseName}&table=${tableName}&identityId=${selectedOption}&recordId=${row[field]}`}
+                          className={`btn btn-sm ${index % 2 === 0 ? 'btn-primary' : 'btn-secondary'} w-full`}
                         >
                           {row[field]}
                         </a>
