@@ -1,50 +1,48 @@
-import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "../components/sidebar";
+import Script from "next/script";
+import { Sidebar, Header, Footer, SidebarProvider } from "@/components/layout";
+import { Metadata } from "next";
+import React, { ReactNode } from "react";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+    variable: "--font-geist-sans",
+    subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+    variable: "--font-geist-mono",
+    subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Wize Admin Service",
-  description: "",
+    title: "JobSight",
+    description: "JobSight is a job search engine that helps you find jobs and apply to them.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-white`}>
-          <div style={{ display: "flex", height: "100vh" }}>
-            <Sidebar />
+interface RootLayoutProps {
+    children: ReactNode;
+}
 
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <header className="border-b-2 border-white flex items-center px-4 py-2 space-x-4">
-              <h1 className="text-lg font-bold flex-1"></h1> {/* flex-1 forces this element to take all avaialbe space */}
-                <nav className="flex space-x-4">
-                  
-                </nav>
-              </header>
-
-              <div style={{ flex: 1, padding: "20px" }}>{children}</div>
-
-              <footer className="border-t-2 border-white">
-                <p className="text-sm text-center">© 2025 Wize Admin Service. All rights reserved.</p>
-              </footer>
-            </div>
-          </div>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: RootLayoutProps): React.ReactElement {
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <Script src="https://kit.fontawesome.com/40c3b5129c.js" crossOrigin="anonymous" />
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen`} >
+                <ThemeProvider>
+                    <SidebarProvider>
+                        <Sidebar />
+                        <div className="flex flex-col flex-1 min-h-screen pb-auto">
+                            <Header />
+                            <div className="grow p-6 container mx-auto">
+                                {children}
+                            </div>
+                            <Footer />
+                        </div>
+                    </SidebarProvider>
+                </ThemeProvider>
+            </body>
+        </html >
+    );
 }

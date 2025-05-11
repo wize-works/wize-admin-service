@@ -24,7 +24,7 @@ export default function Sidebar() {
 
       {/* Sidebar Content */}
       <SidebarCard title="Dashboard" href="/" />
-      <SidebarCard title="Database Tools" href="/databases" activePaths={["/databases", "/tables", "/fields"]} />
+      <SidebarCard title="Database Tools" href="/databases" activePaths={["/databases", "/tables", "/fields", "/details", "#file:page.tsx"]} />
     </div>
   );
 }

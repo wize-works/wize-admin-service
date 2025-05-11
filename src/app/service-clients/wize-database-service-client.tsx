@@ -51,6 +51,11 @@ export async function getMongoClient(): Promise<MongoClient> {
   } catch (error) {
     console.error("Error getting MongoDB client:", error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
@@ -91,6 +96,11 @@ export async function FetchClientKeys(): Promise<{ [key: string]: string }> {
   } catch (error) {
     console.error("Error fetching client keys:", error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
@@ -112,6 +122,11 @@ export async function FetchDatabaseNames() {
   } catch (error) {
     console.error("Error fetching database names:", error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
@@ -135,6 +150,11 @@ export async function FetchTableNames(databaseName: string) {
   } catch (error) {
     console.error(`Error fetching table names for database "${databaseName}":`, error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
@@ -168,11 +188,16 @@ export async function FetchFieldNames(databaseName: string, tableName: string) {
   } catch (error) {
     console.error(`Error fetching field names for table "${tableName}" in database "${databaseName}":`, error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
 // Function to fetch all data from a given table (collection) with optional schema-based filtering
-export async function QueryTable(databaseName: string, tableName: string, identityId?: object) {
+export async function QueryTable(databaseName: string, tableName: string, identityId?: string) {
   try {
     const mongoClient = await getMongoClient();
     
@@ -210,10 +235,15 @@ export async function QueryTable(databaseName: string, tableName: string, identi
   } catch (error) {
     console.error(`Error querying table "${tableName}" in database "${databaseName}"${identityId ? ` with schemaId: ${identityId}` : ''}:`, error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
-export async function fetchRecordById(db: string, table: string, recordId: object, identityId: string) {
+export async function fetchRecordById(db: string, table: string, recordId: string, tenantId: string) {
   try{
     const mongoClient = await getMongoClient();
     
@@ -224,7 +254,7 @@ export async function fetchRecordById(db: string, table: string, recordId: objec
 
     const recordIdString = typeof recordId === 'string' ? recordId : (recordId as ObjectId).toString();
     
-    const query = { _id: new ObjectId(recordIdString), tenantId: identityId };
+    const query = { _id: new ObjectId(recordIdString), tenantId: tenantId };
     
     const record = await collection.findOne(query);
     
@@ -235,6 +265,11 @@ export async function fetchRecordById(db: string, table: string, recordId: objec
     // Fix the string template literal that had an extra } character
     console.error(`Error fetching data for record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
     throw error;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }
 
@@ -243,9 +278,8 @@ export async function fetchRecordById(db: string, table: string, recordId: objec
  * @param identityId - The object ID to look up
  * @returns The associated tenantId as a string or null if not found
  */
-export async function getTenantIdFromConfigurationId(identityId: object): Promise<string | null> {
+export async function getTenantIdFromConfigurationId(identityId: string): Promise<string | null> {
   try {
-    const identityIdString = typeof identityId === 'string' ? identityId : (identityId as ObjectId).toString();
     const mongoClient = await getMongoClient();
     
     if (isDebug) console.log(`getTenantIdFromConfigurationId: Looking up configurationSchemaId for object ID: ${identityId}`);
@@ -254,7 +288,7 @@ export async function getTenantIdFromConfigurationId(identityId: object): Promis
     const database = mongoClient.db("wize-identity");
     const collection = database.collection("tenants");
 
-    const result = await collection.findOne({ "_id": new ObjectId(identityIdString) }, { projection: { tenantId: 1 } });
+    const result = await collection.findOne({ "_id": new ObjectId(identityId) }, { projection: { tenantId: 1 } });
 
     if (!result) {
       if (isDebug) console.log(`getTenantIdFromConfigurationId: No tenantId found for object ID: ${identityId}`);
@@ -266,5 +300,11 @@ export async function getTenantIdFromConfigurationId(identityId: object): Promis
   } catch (error) {
     console.error(`Error getting tenantId for object ID "${identityId}":`, error);
     throw error;
+  }
+  finally {
+    if (client) {
+      await client.close(); // Close the client connection
+      client = null; // Reset the client to null
+    }
   }
 }

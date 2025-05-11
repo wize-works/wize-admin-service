@@ -68,7 +68,7 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
                     <td key={field} className="border border-gray-300 px-4 py-2">
                       {makeIdLinkable && field === "_id" ? (
                         <a 
-                          href={`/api/details/${databaseName}/${tableName}/${selectedOption}/${row[field]}`}
+                          href={`/api/details?db=${databaseName}&table=${tableName}&identityId=${selectedOption}&recordId=${row[field]}`}
                           className="text-blue-600 hover:underline"
                         >
                           {row[field]}
