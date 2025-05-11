@@ -38,7 +38,7 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
         <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} selectedOption={selectedOption} makeIdLinkable={true} /> {/* Left button */}
         <button
           onClick={handleFetchTableData}
-          className="button"
+          className="button btn bg-base-100 hover:bg-base-300"
           disabled={loading}
         >
           {loading ? "Fetching..." : "Fetch Table Data"}

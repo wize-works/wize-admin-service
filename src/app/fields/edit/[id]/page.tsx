@@ -63,7 +63,7 @@ export default function EditRecordPage({
     setSaveError(null);
 
     try {
-      const response = await fetch(`/api/record/${recordid}?db=${db}&table=${table}&recordId=${identityId}`, {
+      const response = await fetch(`/api/record?db=${db}&table=${table}&recordId=${recordid}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

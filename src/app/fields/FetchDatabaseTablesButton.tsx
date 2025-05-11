@@ -19,7 +19,7 @@ export default function FetchDatabaseTablesButton({ databaseName, selectedOption
   return (
     <button
       onClick={handleNavigate}
-      className="button"
+      className="button btn bg-base-100 hover:bg-base-300"
     >
       Tables View
     </button>

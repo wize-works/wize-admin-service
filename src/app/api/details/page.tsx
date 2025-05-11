@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
 import Link from "next/link";
+import FetchFieldsDataButton from "./FetchFieldsDataButton";
 
 type SearchParams = {
   db: string;
@@ -25,9 +26,6 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
       <div className="p-5">
         <h1 className="text-2xl font-bold mb-4">Record Not Found</h1>
         <p>The requested record could not be found.</p>
-        <Link href={`/fields?db=${db}&table=${table}&identityId=${tenantId}`} className="text-blue-600 hover:underline mt-4 inline-block">
-          Back to Table
-        </Link>
       </div>
     );
   }
@@ -36,9 +34,7 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
     <div className="p-5">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Record Details</h1>
-        <Link href={`/fields?db=${db}&table=${table}&identityId=${tenantId}`} className="text-blue-600 hover:underline">
-          Back to Table
-        </Link>
+        
       </div>
       
       <div className="mb-4">
@@ -46,6 +42,14 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
         <p><strong>Table:</strong> {table}</p>
         <p><strong>Record ID:</strong> {JSON.stringify(recordId)}</p>
       </div>
+
+      <FetchFieldsDataButton
+        db={db}
+        table={table}
+        identityId={identityId}
+        className="button btn bg-base-100 hover:bg-base-300 mb-4"
+        buttonText="Back to Fields"
+      />
       
       <div className="bg-base-100 shadow-md rounded-lg overflow-hidden">
         <div className="p-4">
