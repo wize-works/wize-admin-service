@@ -1,44 +1,35 @@
-import { FetchDatabaseNames, FetchClientKeys } from "../service-clients/wize-database-service-client";
+import { FetchDatabaseNames } from "../service-clients/wize-database-service-client";
 import Link from "next/link";
-import SelectList from "../../components/selectList"; // Adjust the import path as necessary
+import { getSelectedClientFromCookies } from "@/context/clientActions";
 
-export default async function DatabasesPage({ searchParams }: { searchParams: { option?: string } }) {
-  // Fetch client keys and transform them into options for the dropdown
-  const clientKeys = await FetchClientKeys();
-  
-  const selectListItems = Object.entries(clientKeys).map(([key, value]) => ({
-    value: key,
-    label: value,
-  }));
+export default async function DatabasesPage() {
+  // Get the selected client from cookies
+  const selectedClient = await getSelectedClientFromCookies();
 
-  // Get the selected option from the query parameters
-  const selectedOption = await searchParams.option;
-
-  // Fetch database names only if an option is selected
-  const databaseNames = selectedOption ? await FetchDatabaseNames() : [];
+  // Fetch database names only if a client is selected, passing the client ID for filtering
+  const databaseNames = selectedClient ? await FetchDatabaseNames(selectedClient.value) : [];
 
   return (
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-4">Databases</h1>
 
-      {/* Add the SelectList component above the <ul> */}
-      <SelectList
-        options={selectListItems}
-        selectedValue={selectedOption}
-        name="option"
-        label="Client Application:"
-      />
+      {/* Instructions for when no client is selected */}
+      {!selectedClient && (
+        <div className="alert alert-info">
+          <p>Please select a client application from the dropdown in the header.</p>
+        </div>
+      )}
 
-      {/* Render the list only if an option is selected */}
-      {selectedOption && (
+      {/* Render the list only if a client is selected */}
+      {selectedClient && (
         <div className="mt-4">
-          <h2 className="text-xl font-semibold mb-2">Available Databases:</h2>
+          <h2 className="text-xl font-semibold mb-2">Available Databases for {selectedClient.label}:</h2>
           <div className="flex flex-col gap-2">
             {databaseNames.map((dbName, index) => (
               <Link
                 key={dbName}
-                href={`/tables?db=${encodeURIComponent(dbName)}&option=${encodeURIComponent(selectedOption)}`}
-                className={`btn ${index % 2 === 0 ? 'btn-primary' : 'btn-secondary'} w-full text-left justify-start`}>
+                href={`/tables?db=${encodeURIComponent(dbName)}`}
+                className={`btn btn-outline ${index % 2 === 0 ? 'border-primary text-primary hover:bg-primary' : 'border-secondary text-secondary hover:bg-secondary'} w-full text-left justify-start`}>
                 {dbName}
               </Link>
             ))}

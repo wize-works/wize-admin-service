@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 interface EditRecordButtonProps {
   db: string;
   table: string;
-  identityId: string;
   recordId: string;
   className?: string;
   buttonText?: string;
@@ -15,7 +14,6 @@ interface EditRecordButtonProps {
 const EditRecordButton: React.FC<EditRecordButtonProps> = ({
   db,
   table,
-  identityId,
   recordId,
   className = "px-4 py-2 btn btn-primary",
   buttonText = "Edit Fields"
@@ -23,7 +21,7 @@ const EditRecordButton: React.FC<EditRecordButtonProps> = ({
   const router = useRouter();
 
   const handleNavigateToEdit = () => {
-    router.push(`/fields/edit?db=${db}&table=${table}&identityId=${identityId}&recordId=${recordId}`);
+    router.push(`/fields/edit?db=${db}&table=${table}&recordId=${recordId}`);
   };
 
   return (

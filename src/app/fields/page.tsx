@@ -1,19 +1,16 @@
-import { FetchFieldNames, FetchClientKeys } from "../service-clients/wize-database-service-client";
-import FetchTableDataButton from "./FetchTableDataButton"; // Import the Client Component
-import SelectList from "../../components/selectList"; // Import the SelectList component
+import { FetchFieldNames } from "../service-clients/wize-database-service-client";
+import FetchTableDataButton from "./FetchTableDataButton"; 
+import { getSelectedClientFromCookies } from "@/context/clientActions";
 
-export default async function FieldsPage({ searchParams }: { searchParams: { db?: string; table?: string; identityId?: string } }) {
+// Add export configuration to indicate dynamic behavior
+export const dynamic = 'force-dynamic';
+
+export default async function FieldsPage({ searchParams }: { searchParams: { db?: string; table?: string; } }) {
+  // Get the selected client from cookies
+  const selectedClient = await getSelectedClientFromCookies();
+  
   const databaseName = searchParams.db;
   const tableName = searchParams.table;
-  const selectedOption = searchParams.identityId;
-
-  // Fetch client keys and transform them into options for the dropdown
-  const clientKeys = await FetchClientKeys();
-  
-  const selectListItems = Object.entries(clientKeys).map(([key, value]) => ({
-    value: key,
-    label: value,
-  }));
 
   if (!databaseName || !tableName) {
     return (
@@ -25,22 +22,27 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
   }
 
   // Fetch all field names and types for the selected table only if client app is selected
-  const fieldInfo = selectedOption ? await FetchFieldNames(databaseName, tableName) : [];
+  const fieldInfo = selectedClient ? await FetchFieldNames(databaseName, tableName, selectedClient.value) : [];
 
   return (
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-4">Database: {databaseName}</h1>
       <h2 className="text-xl font-bold mb-4">Table: {tableName}</h2>
       
-      {/* Add the SelectList component */}
-      <SelectList
-        options={selectListItems}
-        selectedValue={selectedOption}
-        name="identityId"
-        label="Client Application:"
-      />
+      {/* Display selected client app if available */}
+      {selectedClient && (
+        <p className="mb-4 text-gray-600">
+          Client Application: {selectedClient.label}
+        </p>
+      )}
       
-      {selectedOption && (
+      {!selectedClient && (
+        <div className="alert alert-info">
+          <p>Please select a client application from the dropdown in the header.</p>
+        </div>
+      )}
+      
+      {selectedClient && (
         <>
           <div className="mt-4">
             <div className="grid grid-cols-2 gap-4 border-b pb-2 font-bold">
@@ -55,15 +57,17 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
                 </li>
               ))}
             </ul>
-            <div className="mt-4">
-              {/* Pass the selectedOption (schemaId) to the FetchTableDataButton */}
-              <FetchTableDataButton 
-                databaseName={databaseName} 
-                tableName={tableName} 
-                identityId={selectedOption}
-                makeIdLinkable={true} // Add new prop to indicate IDs should be linkable
-              />
-            </div>
+            
+            {/* Only show the FetchTableDataButton for admin users */}
+            {selectedClient.value === '0' && (
+              <div className="flex space-x-4 mt-4">
+                <FetchTableDataButton 
+                  databaseName={databaseName} 
+                  tableName={tableName}
+                  makeIdLinkable={true}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

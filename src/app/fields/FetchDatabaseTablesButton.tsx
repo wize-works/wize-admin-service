@@ -2,26 +2,21 @@
 
 import { useRouter } from "next/navigation";
 
-interface FetchTableDataButtonProps {
-  databaseName: string;
-  selectedOption: string;
-  tableName: string;
-  makeIdLinkable?: boolean; // Add the optional makeIdLinkable prop
-}
-export default function FetchDatabaseTablesButton({ databaseName, selectedOption }: FetchTableDataButtonProps) {
+export default function FetchDatabaseTablesButton({ databaseName, tableName, makeIdLinkable }: 
+  { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
+  
   const router = useRouter();
 
-  function handleNavigate() {
-    // Navigate back to the /tables page with the database name as a query parameter
-    router.push(`/tables?db=${encodeURIComponent(databaseName)}&option=${encodeURIComponent(selectedOption)}`);
+  function navigateToTables() {
+    router.push(`/tables?db=${encodeURIComponent(databaseName)}`);
   }
 
   return (
     <button
-      onClick={handleNavigate}
+      onClick={navigateToTables}
       className="px-4 py-2 btn btn-primary"
     >
-      Tables View
+      Back to Tables
     </button>
   );
 }

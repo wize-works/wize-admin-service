@@ -52,20 +52,35 @@ export async function FetchClientKeys(): Promise<{ [key: string]: string }> {
   });
 }
 
-// Function to fetch all database names
-export async function FetchDatabaseNames() {
+// Function to fetch all database names with optional filtering based on client app
+export async function FetchDatabaseNames(clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      if (isDebug) console.log("FetchDatabaseNames: Connected to MongoDB");
+      if (isDebug) console.log(`FetchDatabaseNames: Connected to MongoDB, clientId: ${clientId || 'none'}`);
 
       // Use the admin database to list all databases
       const adminDb = mongoClient.db().admin();
       const { databases } = await adminDb.listDatabases();
 
-      if (isDebug) console.log(`FetchDatabaseNames: Found ${databases.length} databases`);
+      if (isDebug) console.log(`FetchDatabaseNames: Found ${databases.length} databases before filtering`);
 
-      // Extract and return the names of the databases
-      return databases.map((db) => db.name);
+      // Define system databases to filter out when clientId is not '0'
+      const systemDatabases = ['wize-configuration', 'wize-identity', 'wize-log', 'local', 'admin'];
+
+      // Filter databases based on clientId
+      const filteredDatabases = databases.filter((db) => {
+        // If clientId is '0' or not provided, include all databases
+        if (!clientId || clientId === '0') {
+          return true;
+        }
+        // Otherwise, exclude system databases
+        return !systemDatabases.includes(db.name);
+      });
+
+      if (isDebug) console.log(`FetchDatabaseNames: Returning ${filteredDatabases.length} databases after filtering`);
+
+      // Extract and return the names of the filtered databases
+      return filteredDatabases.map((db) => db.name);
     } catch (error) {
       console.error("Error fetching database names:", error);
       throw error;
@@ -73,55 +88,186 @@ export async function FetchDatabaseNames() {
   });
 }
 
-// Function to fetch all table (collection) names in a given database
-export async function FetchTableNames(databaseName: string) {
+// Function to fetch all table (collection) names in a given database with optional client filtering
+export async function FetchTableNames(databaseName: string, clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      if (isDebug) console.log(`FetchTableNames: Connected to MongoDB, accessing database ${databaseName}`);
+      if (isDebug) console.log(`FetchTableNames: Connected to MongoDB, accessing database ${databaseName}, clientId: ${clientId || 'none'}`);
 
-      // Access the specified database
-      const database = mongoClient.db(databaseName);
+      // If clientId is '0' (admin) or not provided, return all tables without filtering
+      if (!clientId || clientId === '0') {
+        // Access the specified database
+        const database = mongoClient.db(databaseName);
 
-      // List all collections (tables) in the database
-      const collections = await database.listCollections().toArray();
-      
-      if (isDebug) console.log(`FetchTableNames: Found ${collections.length} collections in ${databaseName}`);
+        // List all collections (tables) in the database
+        const collections = await database.listCollections().toArray();
+        
+        if (isDebug) console.log(`FetchTableNames: Found ${collections.length} collections in ${databaseName} (no filtering)`);
 
-      // Extract and return the names of the collections
-      return collections.map((collection) => collection.name);
+        // Extract and return the names of the collections
+        return collections.map((collection) => collection.name);
+      } 
+      // Otherwise, filter tables based on tenant ID
+      else {
+        // First, get the tenantId from the clientId (which is the identity/schema ID)
+        const tenantId = await getTenantIdFromConfigurationId(clientId);
+        
+        if (!tenantId) {
+          if (isDebug) console.log(`FetchTableNames: No tenantId found for clientId ${clientId}, returning empty list`);
+          return [];
+        }
+        
+        if (isDebug) console.log(`FetchTableNames: Found tenantId ${tenantId} for clientId ${clientId}`);
+        
+        // Query the wize-configuration database for schemas matching the database name and tenant ID
+        const configDb = mongoClient.db("wize-configuration");
+        const schemasCollection = configDb.collection("schemas");
+        
+        // Find schema documents for this tenant that match the specified database name
+        const schemaDocuments = await schemasCollection.find({
+          tenantId: tenantId,
+          database: databaseName,
+          table: { $exists: true }
+        }).toArray();
+        
+        if (isDebug) console.log(`FetchTableNames: Found ${schemaDocuments.length} schema documents for tenantId ${tenantId} and database ${databaseName}`);
+        
+        // Extract table names from the schema documents
+        const allowedTables = new Set<string>();
+        
+        schemaDocuments.forEach(doc => {
+          // Add the table from each schema document
+          if (doc.table && typeof doc.table === 'string') {
+            allowedTables.add(doc.table);
+          }
+        });
+        
+        if (isDebug) console.log(`FetchTableNames: Extracted ${allowedTables.size} allowed tables for tenantId ${tenantId} in database ${databaseName}`);
+        
+        // Return only the tables found in the configuration
+        return Array.from(allowedTables);
+      }
     } catch (error) {
-      console.error(`Error fetching table names for database "${databaseName}":`, error);
+      console.error(`Error fetching table names for database "${databaseName}" with clientId "${clientId}":`, error);
       throw error;
     }
   });
 }
 
 // Function to fetch all field names in a given table (collection)
-export async function FetchFieldNames(databaseName: string, tableName: string) {
+export async function FetchFieldNames(databaseName: string, tableName: string, clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      if (isDebug) console.log(`FetchFieldNames: Connected to MongoDB, accessing ${databaseName}.${tableName}`);
+      if (isDebug) console.log(`FetchFieldNames: Connected to MongoDB, accessing ${databaseName}.${tableName}, clientId: ${clientId || 'none'}`);
       
+      // Access the specified database and collection
       const database = mongoClient.db(databaseName);
       const collection = database.collection(tableName);
 
-      // Fetch a sample of documents from the collection
-      const sampleDocuments = await collection.find({}).limit(100).toArray();
-      
-      if (isDebug) console.log(`FetchFieldNames: Retrieved ${sampleDocuments.length} sample documents`);
+      // If clientId is '0' (admin) or not provided, return all fields without filtering
+      if (!clientId || clientId === '0') {
+        // Fetch a sample of documents to infer fields and types
+        const sampleDocuments = await collection.find({}).limit(100).toArray();
+        
+        if (isDebug) console.log(`FetchFieldNames (admin): Retrieved ${sampleDocuments.length} sample documents`);
 
-      // Extract all unique field names and infer their types
-      const fieldInfo = new Map<string, string>();
-      sampleDocuments.forEach((doc) => {
-        Object.entries(doc).forEach(([field, value]) => {
-          if (!fieldInfo.has(field)) {
-            fieldInfo.set(field, typeof value); // Infer the type using `typeof`
+        // Extract all unique field names and infer their types
+        const fieldInfo = new Map<string, string>();
+        
+        if (sampleDocuments.length > 0) {
+          sampleDocuments.forEach((doc) => {
+            Object.entries(doc).forEach(([field, value]) => {
+              if (!fieldInfo.has(field)) {
+                fieldInfo.set(field, typeof value);
+              }
+            });
+          });
+        } else {
+          // Add _id field as a fallback if no documents found
+          fieldInfo.set('_id', 'string');
+        }
+
+        return Array.from(fieldInfo.entries()).map(([name, type]) => ({ name, type }));
+      } 
+      // For non-admin clients, filter fields based on tenantId
+      else {
+        const tenantId = await getTenantIdFromConfigurationId(clientId);
+        
+        if (!tenantId) {
+          if (isDebug) console.log(`FetchFieldNames: No tenantId found for clientId ${clientId}, returning minimal fields`);
+          return [{ name: '_id', type: 'string' }];
+        }
+        
+        if (isDebug) console.log(`FetchFieldNames: Found tenantId ${tenantId} for clientId ${clientId}`);
+        
+        // Query only documents that belong to this tenant to extract fields
+        const tenantDocuments = await collection.find({ tenantId: tenantId }).limit(100).toArray();
+        
+        if (isDebug) console.log(`FetchFieldNames: Retrieved ${tenantDocuments.length} documents for tenantId ${tenantId}`);
+
+        const fieldInfo = new Map<string, string>();
+        
+        // If we found documents for this tenant, extract fields
+        if (tenantDocuments.length > 0) {
+          tenantDocuments.forEach((doc) => {
+            Object.entries(doc).forEach(([field, value]) => {
+              if (!fieldInfo.has(field)) {
+                fieldInfo.set(field, typeof value);
+              }
+            });
+          });
+        }
+        // If no documents found, try to get field info from schema
+        else {
+          if (isDebug) console.log(`FetchFieldNames: No documents found, looking for schema definition for table ${tableName}`);
+          
+          // Query wize-configuration.schemas for field definitions
+          const configDb = mongoClient.db("wize-configuration");
+          const schemasCollection = configDb.collection("schemas");
+          
+          const schemaDoc = await schemasCollection.findOne({
+            tenantId: tenantId,
+            database: databaseName,
+            table: tableName
+          });
+          
+          if (schemaDoc && schemaDoc.fields) {
+            if (isDebug) console.log(`FetchFieldNames: Found schema definition with ${Object.keys(schemaDoc.fields).length} fields`);
+            
+            // Process fields from schema
+            Object.entries(schemaDoc.fields).forEach(([fieldName, fieldConfig]: [string, any]) => {
+              // Map schema types to JavaScript types
+              let jsType = 'unknown';
+              if (fieldConfig.type) {
+                const schemaType = fieldConfig.type.toLowerCase();
+                if (['string', 'text', 'varchar', 'char'].includes(schemaType)) {
+                  jsType = 'string';
+                } else if (['number', 'int', 'integer', 'float', 'decimal', 'double'].includes(schemaType)) {
+                  jsType = 'number';
+                } else if (['boolean', 'bool'].includes(schemaType)) {
+                  jsType = 'boolean';
+                } else if (['date', 'datetime', 'timestamp'].includes(schemaType)) {
+                  jsType = 'date';
+                } else if (['object', 'json'].includes(schemaType)) {
+                  jsType = 'object';
+                } else if (['array'].includes(schemaType)) {
+                  jsType = 'array';
+                }
+              }
+              
+              fieldInfo.set(fieldName, jsType);
+            });
           }
-        });
-      });
+        }
 
-      // Convert the Map to an array of objects with name and type
-      return Array.from(fieldInfo.entries()).map(([name, type]) => ({ name, type }));
+        // Ensure we at least have _id field
+        if (fieldInfo.size === 0) {
+          if (isDebug) console.log(`FetchFieldNames: No fields found for tenant ${tenantId}, using fallback`);
+          fieldInfo.set('_id', 'string');
+        }
+
+        return Array.from(fieldInfo.entries()).map(([name, type]) => ({ name, type }));
+      }
     } catch (error) {
       console.error(`Error fetching field names for table "${tableName}" in database "${databaseName}":`, error);
       throw error;
@@ -171,17 +317,23 @@ export async function QueryTable(databaseName: string, tableName: string, identi
   });
 }
 
-export async function fetchRecordById(db: string, table: string, recordId: string, tenantId: string) {
+export async function fetchRecordById(db: string, table: string, recordId: string, tenantId: string, isAdmin: boolean = false) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try{
-      if (isDebug) console.log(`fetchRecordById: Connected to MongoDB, querying ${db}.${table} for recordId: ${recordId}`);
+      if (isDebug) {
+        const adminText = isAdmin ? " as admin" : "";
+        console.log(`fetchRecordById: Connected to MongoDB, querying ${db}.${table} for recordId: ${recordId}${adminText}`);
+      }
       
       const database = mongoClient.db(db);
       const collection = database.collection(table);
 
       const recordIdString = typeof recordId === 'string' ? recordId : (recordId as ObjectId).toString();
       
-      const query = { _id: new ObjectId(recordIdString), tenantId: tenantId };
+      // Build query - if admin, only filter by ID; otherwise include tenantId
+      const query = isAdmin 
+        ? { _id: new ObjectId(recordIdString) }
+        : { _id: new ObjectId(recordIdString), tenantId: tenantId };
       
       const record = await collection.findOne(query);
       

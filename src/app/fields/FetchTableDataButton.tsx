@@ -1,20 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton"; // Import the button
+import { getSelectedClientFromCookies } from "@/context/clientActions";
 
-export default function FetchTableDataButton({ databaseName, tableName, identityId: selectedOption, makeIdLinkable }: { databaseName: string; tableName: string; identityId: string; makeIdLinkable: boolean }) {
+export default function FetchTableDataButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
   const [tableData, setTableData] = useState<any[]>([]); // State to store fetched table data
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Get selected client ID from cookies
+    const fetchClientId = async () => {
+      try {
+        const selectedClient = await getSelectedClientFromCookies();
+        setSelectedClientId(selectedClient?.value || null);
+      } catch (error) {
+        console.error("Error fetching client from cookies:", error);
+      }
+    };
+    
+    fetchClientId();
+  }, []);
 
   async function handleFetchTableData() {
+    if (!selectedClientId) {
+      setError("No client selected");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      // Update the API call to include the schemaId parameter
+      // Update the API call to include the clientId from cookies
       const response = await fetch(
-        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedOption)}`
+        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -35,11 +56,11 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
     <div className="mt-4">
       {/* Buttons side by side */}
       <div className="flex space-x-4">
-        <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} selectedOption={selectedOption} makeIdLinkable={true} /> {/* Left button */}
+        <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} makeIdLinkable={true} /> {/* Left button */}
         <button
           onClick={handleFetchTableData}
           className="px-4 py-2 btn btn-primary"
-          disabled={loading}
+          disabled={loading || !selectedClientId}
         >
           {loading ? "Fetching..." : "Fetch Table Data"}
         </button>
@@ -67,8 +88,8 @@ export default function FetchTableDataButton({ databaseName, tableName, identity
                     <td key={field} className="px-4 py-2 border border-base-200">
                       {fieldIndex === 0 ? (
                         <a 
-                          href={`/fields/details?db=${databaseName}&table=${tableName}&identityId=${selectedOption}&recordId=${row[field]}`}
-                          className={`btn btn-sm ${index % 2 === 0 ? 'btn-primary' : 'btn-secondary'} w-full`}
+                          href={`/fields/details?db=${databaseName}&table=${tableName}&recordId=${row[field]}`}
+                          className={`btn btn-sm btn-outline ${index % 2 === 0 ? 'border-primary text-primary hover:bg-primary' : 'border-secondary text-secondary hover:bg-secondary'} w-full`}
                         >
                           {row[field]}
                         </a>

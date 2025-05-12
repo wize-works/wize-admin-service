@@ -5,6 +5,7 @@ import Script from "next/script";
 import { Sidebar, Header, Footer, SidebarProvider } from "@/components/layout";
 import { Metadata } from "next";
 import React, { ReactNode } from "react";
+import { ClientProvider } from '@/context/ClientContext';
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -31,16 +32,18 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
             <Script src="https://kit.fontawesome.com/40c3b5129c.js" crossOrigin="anonymous" />
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen`} >
                 <ThemeProvider>
-                    <SidebarProvider>
-                        <Sidebar />
-                        <div className="flex flex-col flex-1 min-h-screen pb-auto">
-                            <Header />
-                            <div className="grow p-6 container mx-auto">
-                                {children}
+                    <ClientProvider>
+                        <SidebarProvider>
+                            <Sidebar />
+                            <div className="flex flex-col flex-1 min-h-screen pb-auto">
+                                <Header />
+                                <div className="grow p-6 container mx-auto">
+                                    {children}
+                                </div>
+                                <Footer />
                             </div>
-                            <Footer />
-                        </div>
-                    </SidebarProvider>
+                        </SidebarProvider>
+                    </ClientProvider>
                 </ThemeProvider>
             </body>
         </html >

@@ -82,7 +82,7 @@ export const Sidebar: React.FC = () => {
 
                     {/* Navigation sections */}
                     <NavSection title="Main" isCollapsed={isCollapsed}>
-                        <NavItem href="/databases" key="Database Tools" icon="fa-regular fa-rectangles-mixed" text="Datbase Tools" isCollapsed={isCollapsed} />
+                        <NavItem href="/databases" key="Database Tools" icon="fa-regular fa-rectangles-mixed" text="Database Tools" isCollapsed={isCollapsed} />
                     </NavSection>
 
                     <div className="mt-6 px-2">
