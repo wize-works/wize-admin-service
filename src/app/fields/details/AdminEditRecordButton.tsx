@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 
-interface EditRecordButtonProps {
+interface AdminEditRecordButtonProps {
   db: string;
   table: string;
   recordId: string;
@@ -11,17 +11,17 @@ interface EditRecordButtonProps {
   buttonText?: string;
 }
 
-const EditRecordButton: React.FC<EditRecordButtonProps> = ({
+const AdminEditRecordButton: React.FC<AdminEditRecordButtonProps> = ({
   db,
   table,
   recordId,
-  className = "px-4 py-2 btn btn-primary",
-  buttonText = "Edit Fields"
+  className = "btn btn-error text-white", // Changed to use DaisyUI's btn-error class
+  buttonText = "Admin Edit Fields"
 }) => {
   const router = useRouter();
 
   const handleNavigateToEdit = () => {
-    router.push(`/fields/edit?db=${db}&table=${table}&recordId=${recordId}`);
+    router.push(`/fields/adminEdit?db=${db}&table=${table}&recordId=${recordId}`);
   };
 
   return (
@@ -35,4 +35,4 @@ const EditRecordButton: React.FC<EditRecordButtonProps> = ({
   );
 };
 
-export default EditRecordButton;
+export default AdminEditRecordButton;

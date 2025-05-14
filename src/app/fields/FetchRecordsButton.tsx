@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 
-export default function FetchRecordAsAdminButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
+export default function FetchRecordsButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
   const [tableData, setTableData] = useState<any[]>([]); // State to store fetched table data
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
@@ -55,10 +55,10 @@ export default function FetchRecordAsAdminButton({ databaseName, tableName, make
     <div>
       <button
         onClick={handleFetchTableData}
-        className="px-4 py-2 btn btn-error"
+        className="px-4 py-2 btn btn-primary"
         disabled={loading || !selectedClientId}
       >
-        {loading ? "Fetching..." : "ADMIN: Fetch Records"}
+        {loading ? "Fetching..." : "Fetch Records"}
       </button>
 
       {error && <p className="mt-4 text-red-500">Error: {error}</p>}

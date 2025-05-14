@@ -1,5 +1,6 @@
 import { FetchFieldNames } from "../service-clients/wize-database-service-client";
-import FetchTableDataButton from "./FetchTableDataButton";
+import FetchRecordAsAdminButton from "./FetchTableDataButton";
+import FetchRecordsButton from "./FetchRecordsButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton";
 
@@ -68,7 +69,14 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
                 makeIdLinkable={true}
               />
               {selectedClient.value === '0' && (
-                <FetchTableDataButton
+                <FetchRecordAsAdminButton
+                  databaseName={databaseName}
+                  tableName={tableName}
+                  makeIdLinkable={true}
+                />
+              )}
+              {selectedClient.value !== '0' && (
+                <FetchRecordsButton
                   databaseName={databaseName}
                   tableName={tableName}
                   makeIdLinkable={true}

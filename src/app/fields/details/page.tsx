@@ -1,7 +1,8 @@
 import { fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
-import EditRecordButton from "./EditRecordButton";
+import AdminEditRecordButton from "./AdminEditRecordButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
+import EditRecordButton from "../edit/EditRecordButton";
 
 type SearchParams = {
   db: string;
@@ -67,11 +68,20 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
           db={db}
           table={table}
         />
-        <EditRecordButton
-          db={db}
-          table={table}
-          recordId={recordId}
-        />
+        {isAdmin && (
+          <AdminEditRecordButton
+            db={db}
+            table={table}
+            recordId={recordId}
+          />
+        )}
+        { !isAdmin && (
+          <EditRecordButton
+            db={db}
+            table={table}
+            recordId={recordId}
+          />
+        )}
       </div>
       <div className="bg-base-100 shadow-md rounded-lg overflow-hidden mt-4">
         <div className="p-4">
