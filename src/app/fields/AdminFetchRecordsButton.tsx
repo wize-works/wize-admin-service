@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 
-export default function FetchRecordAsAdminButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
+export default function AdminFetchRecordButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
   const [tableData, setTableData] = useState<any[]>([]); // State to store fetched table data
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
@@ -23,7 +23,7 @@ export default function FetchRecordAsAdminButton({ databaseName, tableName, make
     fetchClientId();
   }, []);
 
-  async function handleFetchTableData() {
+  async function handleAdminFetchRecords() {
     if (!selectedClientId) {
       setError("No client selected");
       return;
@@ -34,7 +34,7 @@ export default function FetchRecordAsAdminButton({ databaseName, tableName, make
     try {
       // Update the API call to include the clientId from cookies
       const response = await fetch(
-        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
+        `/api/adminFetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -54,7 +54,7 @@ export default function FetchRecordAsAdminButton({ databaseName, tableName, make
   return (
     <div>
       <button
-        onClick={handleFetchTableData}
+        onClick={handleAdminFetchRecords}
         className="px-4 py-2 btn btn-error"
         disabled={loading || !selectedClientId}
       >

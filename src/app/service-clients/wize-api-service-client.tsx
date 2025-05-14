@@ -117,19 +117,23 @@ export const GetRecords = async (
 ): Promise<any[]> => {
   // GraphQL query to fetch all records from a table with optional filters
   const getRecordsQuery = `
-    query GetRecords($table: String!, $filters: JSON) {
-      getRecords(table: $table, filters: $filters) {
-        items {
-          id
-          data
+    query FindComments {
+    findComments {
+        data {
+            _id
+            userId
+            postId
+            name
+            createdAt
+            createdBy
+            comment
         }
-        total
-      }
     }
+}
   `;
   
   return fetchWithAuth(
-    `https://api.wize.works/wize-${db}/graphql`, 
+    `https://api.wize.works/${db}/graphql`, 
     getRecordsQuery,
     { table, filters },
     {},

@@ -23,7 +23,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     fetchClientId();
   }, []);
 
-  async function handleFetchTableData() {
+  async function handleFetchRecords() {
     if (!selectedClientId) {
       setError("No client selected");
       return;
@@ -34,7 +34,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     try {
       // Update the API call to include the clientId from cookies
       const response = await fetch(
-        `/api/fetchTableData?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
+        `/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -49,12 +49,14 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
   }
 
   // Get all unique fields from the data
-  const allFields = Array.from(new Set(tableData.flatMap((row) => Object.keys(row))));
+  const allFields = Array.isArray(tableData) 
+    ? Array.from(new Set(tableData.flatMap((row) => Object.keys(row || {}))))
+    : [];
 
   return (
     <div>
       <button
-        onClick={handleFetchTableData}
+        onClick={handleFetchRecords}
         className="px-4 py-2 btn btn-primary"
         disabled={loading || !selectedClientId}
       >
