@@ -138,7 +138,7 @@ export async function FetchTableNames(databaseName: string, clientId?: string) {
         schemaDocuments.forEach(doc => {
           // Add the table from each schema document
           if (doc.table && typeof doc.table === 'string') {
-            allowedTables.add(doc.table);
+            allowedTables.add(doc.table + 's'); // Add 's' to the table name
           }
         });
         
@@ -187,7 +187,16 @@ export async function FetchFieldNames(databaseName: string, tableName: string, c
           fieldInfo.set('_id', 'string');
         }
 
-        return Array.from(fieldInfo.entries()).map(([name, type]) => ({ name, type }));
+        // Convert Map to array and sort alphabetically, ensuring _id comes first
+        return Array.from(fieldInfo.entries())
+          .sort((a, b) => {
+            // Always put _id first
+            if (a[0] === '_id') return -1;
+            if (b[0] === '_id') return 1;
+            // Sort other fields alphabetically
+            return a[0].localeCompare(b[0]);
+          })
+          .map(([name, type]) => ({ name, type }));
       } 
       // For non-admin clients, filter fields based on tenantId
       else {
@@ -266,7 +275,16 @@ export async function FetchFieldNames(databaseName: string, tableName: string, c
           fieldInfo.set('_id', 'string');
         }
 
-        return Array.from(fieldInfo.entries()).map(([name, type]) => ({ name, type }));
+        // Convert to array and sort alphabetically, ensuring _id comes first
+        return Array.from(fieldInfo.entries())
+          .sort((a, b) => {
+            // Always put _id first
+            if (a[0] === '_id') return -1;
+            if (b[0] === '_id') return 1;
+            // Sort other fields alphabetically
+            return a[0].localeCompare(b[0]);
+          })
+          .map(([name, type]) => ({ name, type }));
       }
     } catch (error) {
       console.error(`Error fetching field names for table "${tableName}" in database "${databaseName}":`, error);

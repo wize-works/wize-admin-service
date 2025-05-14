@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton"; // Import the button
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 
 export default function FetchTableDataButton({ databaseName, tableName, makeIdLinkable }: { databaseName: string; tableName: string; makeIdLinkable: boolean }) {
@@ -53,23 +52,19 @@ export default function FetchTableDataButton({ databaseName, tableName, makeIdLi
   const allFields = Array.from(new Set(tableData.flatMap((row) => Object.keys(row))));
 
   return (
-    <div className="mt-4">
-      {/* Buttons side by side */}
-      <div className="flex space-x-4">
-        <FetchDatabaseTablesButton databaseName={databaseName} tableName={tableName} makeIdLinkable={true} /> {/* Left button */}
-        <button
-          onClick={handleFetchTableData}
-          className="px-4 py-2 btn btn-primary"
-          disabled={loading || !selectedClientId}
-        >
-          {loading ? "Fetching..." : "Fetch Table Data"}
-        </button>
-      </div>
+    <div>
+      <button
+        onClick={handleFetchTableData}
+        className="px-4 py-2 btn btn-primary"
+        disabled={loading || !selectedClientId}
+      >
+        {loading ? "Fetching..." : "Fetch Table Data"}
+      </button>
 
       {error && <p className="mt-4 text-red-500">Error: {error}</p>}
 
       {tableData.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 w-full">
           <h3 className="text-xl font-bold mb-2">Table Data:</h3>
           <table className="table-auto border-collapse w-full">
             <thead className="bg-base-300">
