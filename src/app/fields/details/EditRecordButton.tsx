@@ -15,13 +15,13 @@ const EditRecordButton: React.FC<EditRecordButtonProps> = ({
   db,
   table,
   recordId,
-  className = "btn btn-primary text-white", // Changed to use DaisyUI's btn-error class
+  className = "btn btn-primary",
   buttonText = "Edit Fields"
 }) => {
   const router = useRouter();
 
   const handleNavigateToEdit = () => {
-    router.push(`/fields/Edit?db=${db}&table=${table}&recordId=${recordId}`);
+    router.push(`/fields/edit?db=${db}&table=${table}&recordId=${recordId}`);
   };
 
   return (

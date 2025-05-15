@@ -1,8 +1,8 @@
 import { fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
 import AdminEditRecordButton from "./AdminEditRecordButton";
+import EditRecordButton from "./EditRecordButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
-import EditRecordButton from "../edit/EditRecordButton";
 
 type SearchParams = {
   db: string;

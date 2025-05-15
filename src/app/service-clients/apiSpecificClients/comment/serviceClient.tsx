@@ -1,12 +1,11 @@
-//use fetch to get data from the API and return it as a promise
-
-// Base fetch function with authorization headers and GraphQL support
+const url = "https://api.wize.works/wize-comment/graphql";
 const fetchWithAuth = async (url: string, graphqlQuery: string, variables: any = {}, options: RequestInit = {}, apiKey?: string) => {
   const headers = {
     ...options.headers,
     'wize-api-key': apiKey || "",
     'Content-Type': 'application/json',
   };
+
 
   console.log(`Making API request to ${url} with headers: ${headers}, GraphQl Query: ${graphqlQuery}, Variables: ${JSON.stringify(variables)}`);
 
@@ -32,26 +31,26 @@ const fetchWithAuth = async (url: string, graphqlQuery: string, variables: any =
 
 // Update a record in the database
 export const UpdateRecord = async (
-  db: string, 
-  table: string, 
-  recordId: string, 
+  db: string,
+  table: string,
+  recordId: string,
   data: any,
   apiKey?: string
 ): Promise<any> => {
   // GraphQL mutation for updating a record
   const updateMutation = `
-    mutation UpdateRecord($table: String!, $recordId: ID!, $data: JSON!) {
-      updateRecord(table: $table, recordId: $recordId, data: $data) {
-        id
-        success
-        message
-        record
+      mutation UpdateRecord($table: String!, $recordId: ID!, $data: JSON!) {
+        updateRecord(table: $table, recordId: $recordId, data: $data) {
+          id
+          success
+          message
+          record
+        }
       }
-    }
-  `;
-  
+    `;
+
   return fetchWithAuth(
-    `https://api.wize.works/wize-${db}/graphql`, 
+    url,
     updateMutation,
     { table, recordId, data },
     {},
@@ -60,47 +59,45 @@ export const UpdateRecord = async (
 };
 
 // Get a record by ID
-export const GetRecordById = async (
-  db: string,
-  table: string,
-  identityId: string,
+export const FetchCommentsById = async (
   recordId: string,
   apiKey?: string
 ): Promise<any> => {
-  console.log(`GetRecordById called with params: db=${db}, table=${table}, identityId=${identityId}, recordId=${recordId}, apiKey=${apiKey}`);
-  
-  const url = `https://api.wize.works/${db}/graphql`;
+
   console.log(`API URL: ${url}`);
-  
+
   // GraphQL query to fetch a record by ID
+  //TODO: Figure out how to customize these fields based on tenantID or some such.
   const query = `
-    query FindCommentById {
-    findCommentById(id: "680aa8c956dfb81718931ad7") {
-        _id
-        name
-      }
-    }`;
-  
+      query FindCommentById($recordId: ID!) {
+      findCommentById(id: $recordId) {
+          _id
+          userId
+          postId
+          name
+          createdAt
+          createdBy
+          comment
+        }
+      }`;
+
   console.log('GraphQL Query:', query);
-  console.log('Variables:', { db, table, recordId, apiKey });
+  console.log('Variables:', { recordId, apiKey });
 
   try {
     console.log('Making API request...');
     const response = await fetchWithAuth(
       url,
       query,
-      { table, recordId },
+      { recordId },
       {},
       apiKey
     );
     console.log('API Response:', response);
-    return response;
+    return response.data;
   } catch (error) {
     console.error('GetRecordById Error:', error);
     console.error('Error Details:', {
-      db,
-      table,
-      identityId,
       recordId,
       graphqlQuery: query
     });
@@ -109,33 +106,30 @@ export const GetRecordById = async (
 };
 
 // Get all records from a table
-export const GetRecords = async (
-  db: string,
-  table: string,
-  filters?: any,
+export const FetchComments = async (
   apiKey?: string
 ): Promise<any[]> => {
   // GraphQL query to fetch all records from a table with optional filters
-  const getRecordsQuery = `
-    query FindComments {
-    findComments {
-        data {
-            _id
-            userId
-            postId
-            name
-            createdAt
-            createdBy
-            comment
-        }
-    }
-}
-  `;
-  
+  const query = `
+      query FindComments {
+      findComments {
+          data {
+              _id
+              userId
+              postId
+              name
+              createdAt
+              createdBy
+              comment
+          }
+      }
+  }
+    `;
+
   return fetchWithAuth(
-    `https://api.wize.works/${db}/graphql`, 
-    getRecordsQuery,
-    { table, filters },
+    url,
+    query,
+    {},
     {},
     apiKey
   );

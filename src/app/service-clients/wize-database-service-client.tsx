@@ -395,7 +395,7 @@ export async function getTenantIdFromConfigurationId(identityId: string): Promis
   });
 }
 
-export async function GetIdentityKey(_id: string): Promise<string | null> {
+export async function FetchApiKey(_id: string): Promise<string | null> {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
       if (isDebug) console.log(`GetIdentityKey: Looking up identity key for object ID: ${_id}`);

@@ -32,17 +32,26 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     setLoading(true);
     setError(null);
     try {
-      // Update the API call to include the clientId from cookies
-      const response = await fetch(
-        `/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&identityId=${encodeURIComponent(selectedClientId)}`
-      );
+      // Get the identity key from our new API endpoint
+      const keyResponse = await fetch(`/api/getIdentityKey?clientId=${encodeURIComponent(selectedClientId)}`);
+      if (!keyResponse.ok) {
+        throw new Error(`Failed to get identity key: ${keyResponse.status}`);
+      }
+      const keyData = await keyResponse.json();
+      const identityKey = keyData.identityKey;
+      
+      if (!identityKey) {
+        setError("No identity key found");
+        return;
+      }
+      const response = await fetch(`/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&apiKey=${encodeURIComponent(identityKey)}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
       const data = await response.json();
-      setTableData(data); // Update state with fetched data
+      setTableData(data);
     } catch (error: any) {
-      setError(error.message); // Update state with error message
+      setError(error.message);
     } finally {
       setLoading(false);
     }
