@@ -10,13 +10,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 });
     }
     
-    const identityKey = await FetchApiKey(clientId);
+    const apiKey = await FetchApiKey(clientId);
     
-    if (!identityKey) {
+    if (!apiKey) {
       return NextResponse.json({ error: 'Identity key not found' }, { status: 404 });
     }
     
-    return NextResponse.json({ identityKey });
+    return NextResponse.json({ apiKey: apiKey });
   } catch (error) {
     console.error('Error fetching identity key:', error);
     return NextResponse.json({ error: 'Failed to fetch identity key' }, { status: 500 });

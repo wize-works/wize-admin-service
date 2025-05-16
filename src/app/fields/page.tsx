@@ -1,4 +1,5 @@
-import { FetchFieldNames } from "../service-clients/wize-database-service-client";
+import { FetchApiKey, FetchFieldNames } from "../service-clients/wize-database-service-client";
+import { FetchFieldNamesFromApi } from "../service-clients/wize-api-service-client";
 import AdminFetchRecordButton from "./AdminFetchRecordsButton";
 import FetchRecordsButton from "./FetchRecordsButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
@@ -23,9 +24,16 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
     );
   }
 
-  // Fetch all field names and types for the selected table only if client app is selected
-  const fieldInfo = selectedClient ? await FetchFieldNames(databaseName, tableName, selectedClient.value) : [];
-
+  const selectedClientId = selectedClient?.value;
+  var fieldInfo: { name: string; type: string }[] = [];
+  if (selectedClientId === '0') {
+    fieldInfo = await FetchFieldNames(databaseName, tableName, selectedClientId);
+  }
+  else {
+    const apikey = await FetchApiKey(selectedClientId ?? '');
+    fieldInfo = selectedClient && apikey ? await FetchFieldNamesFromApi(databaseName, tableName, apikey) : [];
+  }
+  
   return (
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-4">Database: {databaseName}</h1>

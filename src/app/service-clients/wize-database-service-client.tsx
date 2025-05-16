@@ -396,9 +396,15 @@ export async function getTenantIdFromConfigurationId(identityId: string): Promis
 }
 
 export async function FetchApiKey(_id: string): Promise<string | null> {
+  // If admin mode (ID is '0'), return null immediately
+  if (_id === '0') {
+    if (isDebug) console.log(`FetchApiKey: Admin mode detected (_id='0'), not fetching API key`);
+    return null;
+  }
+  
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      if (isDebug) console.log(`GetIdentityKey: Looking up identity key for object ID: ${_id}`);
+      if (isDebug) console.log(`FetchApiKey: Looking up api key for object ID: ${_id}`);
       
       const database = mongoClient.db("wize-identity");
       const collection = database.collection("tenants");
@@ -406,14 +412,14 @@ export async function FetchApiKey(_id: string): Promise<string | null> {
       const result = await collection.findOne({ "_id": new ObjectId(_id) }, { projection: { key: 1 } });
 
       if (!result) {
-        if (isDebug) console.log(`GetIdentityKey: No identity key found for object ID: ${_id}`);
+        if (isDebug) console.log(`FetchApiKey: No api key found for object ID: ${_id}`);
         return null;
       }
 
-      if (isDebug) console.log(`GetIdentityKey: Found identity key: ${result.key} for object ID: ${_id}`);
+      if (isDebug) console.log(`FetchApiKey: Found api key: ${result.key} for object ID: ${_id}`);
       return result.key;
     } catch (error) {
-      console.error(`Error getting identity key for object ID "${_id}":`, error);
+      console.error(`Error getting api key for object ID "${_id}":`, error);
       throw error;
     }
   });

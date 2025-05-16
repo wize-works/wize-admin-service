@@ -1,4 +1,4 @@
-import { CommentRecord } from './CommentRecord.jsx';
+import { CommentRecord } from './Record.jsx';
 
 export interface FindCommentsResponse {
   data?: {

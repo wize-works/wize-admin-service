@@ -32,24 +32,42 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     setLoading(true);
     setError(null);
     try {
-      // Get the identity key from our new API endpoint
-      const keyResponse = await fetch(`/api/getIdentityKey?clientId=${encodeURIComponent(selectedClientId)}`);
-      if (!keyResponse.ok) {
-        throw new Error(`Failed to get identity key: ${keyResponse.status}`);
+
+      const apiKeyResponse = await fetch(`/api/fetchApiKey?clientId=${encodeURIComponent(selectedClientId)}`);
+      if (!apiKeyResponse.ok) {
+        throw new Error(`Failed to get API key: ${apiKeyResponse.status}`);
       }
-      const keyData = await keyResponse.json();
-      const identityKey = keyData.identityKey;
+      const apiKeyData = await apiKeyResponse.json();
+      if (!apiKeyData) {  
+        throw new Error("API key not found");
+      }
       
-      if (!identityKey) {
-        setError("No identity key found");
-        return;
-      }
-      const response = await fetch(`/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&apiKey=${encodeURIComponent(identityKey)}`);
+      // Extract the actual API key value from the response
+      const apiKey = apiKeyData.apiKey || apiKeyData;
+      
+      const response = await fetch(`/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&apiKey=${encodeURIComponent(apiKey)}&identityKey=${encodeURIComponent(selectedClientId)}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      const data = await response.json();
-      setTableData(data);
+      
+      const responseData = await response.json();
+      
+      // Handle the nested data structure if present
+      let extractedData = responseData;
+      
+      // Check if response has the nested structure
+      if (responseData.data) {
+        const tableCapitalized = tableName.charAt(0).toUpperCase() + tableName.slice(1);
+        const findMethodName = `find${tableCapitalized}`;
+        
+        if (responseData.data[findMethodName] && responseData.data[findMethodName].data) {
+          extractedData = responseData.data[findMethodName].data;
+        } else {
+          extractedData = responseData.data;
+        }
+      }
+      
+      setTableData(Array.isArray(extractedData) ? extractedData : []);
     } catch (error: any) {
       setError(error.message);
     } finally {

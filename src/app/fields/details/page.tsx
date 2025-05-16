@@ -1,4 +1,5 @@
-import { fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
+import { FetchApiKey, fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
+import { FetchFieldNamesFromApi, FetchRecordById } from "../../service-clients/wize-api-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
 import AdminEditRecordButton from "./AdminEditRecordButton";
 import EditRecordButton from "./EditRecordButton";
@@ -27,16 +28,61 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
   let record;
   const isAdmin = selectedClient.value === '0';
 
-  if (isAdmin) {
-    // For admin, use the isAdmin flag to bypass tenant filtering
-    record = await fetchRecordById(db, table, recordId, '', true);
-  } else {
-    // For non-admin users, get the tenant ID and filter by it
-    const tenantId = await getTenantIdFromConfigurationId(selectedClient.value);
-    if (!tenantId) {
-      throw new Error("Tenant ID is null. Unable to fetch the record.");
+  try {
+    if (isAdmin) {
+      // For admin, use the isAdmin flag to bypass tenant filtering
+      record = await fetchRecordById(db, table, recordId, '', true);
+    } else {
+      // For non-admin users, get the tenant ID and filter by it
+      const tenantId = await getTenantIdFromConfigurationId(selectedClient.value);
+      if (!tenantId) {
+        throw new Error("Tenant ID is null. Unable to fetch the record.");
+      }
+      
+      try {
+        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAA");
+        // Get API key - handle errors gracefully
+        const apiKey = await FetchApiKey(selectedClient.value);
+        if (!apiKey) {
+          throw new Error("API key not found");
+        }
+        
+        // Get field names with better error handling
+        let fieldNames;
+        try {
+          fieldNames = await FetchFieldNamesFromApi(db, table, apiKey);
+          console.log("Field names retrieved:", fieldNames);
+        } catch (fieldError) {
+          console.error("Error fetching field names:", fieldError);
+          // Use default field names
+          fieldNames = [{ name: '_id', type: 'String' }];
+        }
+        
+        // Get record data
+        const fieldNameStrings = fieldNames.map(field => field.name);
+        record = await FetchRecordById(db, table, recordId, fieldNameStrings, apiKey);
+        
+        // Extract the record from the response if needed
+        const tableCapitalized = table.charAt(0).toUpperCase() + table.slice(1);
+        const findMethodName = `find${tableCapitalized}ById`;
+        
+        if (record && record[findMethodName]) {
+          record = record[findMethodName];
+        }
+      } catch (apiError) {
+        console.error("API service error:", apiError);
+        // Fall back to standard database service
+        record = await fetchRecordById(db, table, recordId, tenantId);
+      }
     }
-    record = await fetchRecordById(db, table, recordId, tenantId, false);
+  } catch (error) {
+    console.error("Error fetching record:", error);
+    return (
+      <div className="p-5">
+        <h1 className="text-2xl font-bold mb-4">Error Fetching Record</h1>
+        <p>There was an error retrieving the record: {error instanceof Error ? error.message : String(error)}</p>
+      </div>
+    );
   }
 
   if (!record) {
