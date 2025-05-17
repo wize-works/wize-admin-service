@@ -1,5 +1,5 @@
-import { FetchApiKey, FetchFieldNames } from "../service-clients/wize-database-service-client";
-import { FetchFieldNamesFromApi } from "../service-clients/wize-api-service-client";
+import { FetchApiKey, FetchFieldNames as FetchFieldNamesFromDb } from "../service-clients/wize-database-service-client";
+import { FetchFieldNames as FetchFieldnamesFromApi } from "../service-clients/wize-api-service-client";
 import AdminFetchRecordButton from "./AdminFetchRecordsButton";
 import FetchRecordsButton from "./FetchRecordsButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
@@ -27,11 +27,11 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
   const selectedClientId = selectedClient?.value;
   var fieldInfo: { name: string; type: string }[] = [];
   if (selectedClientId === '0') {
-    fieldInfo = await FetchFieldNames(databaseName, tableName, selectedClientId);
+    fieldInfo = await FetchFieldNamesFromDb(databaseName, tableName, selectedClientId);
   }
   else {
     const apikey = await FetchApiKey(selectedClientId ?? '');
-    fieldInfo = selectedClient && apikey ? await FetchFieldNamesFromApi(databaseName, tableName, apikey) : [];
+    fieldInfo = selectedClient && apikey ? await FetchFieldnamesFromApi(databaseName, tableName, apikey) : [];
   }
   
   return (

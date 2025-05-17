@@ -1,4 +1,4 @@
-import { FetchRecordById, FetchFieldNamesFromApi } from '../../service-clients/wize-api-service-client';
+import { FetchRecordById, FetchFieldNames } from '../../service-clients/wize-api-service-client';
 import { FetchApiKey } from '../../service-clients/wize-database-service-client';
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 import { redirect } from "next/navigation";
@@ -30,7 +30,7 @@ export default async function EditPage({ searchParams }: { searchParams: SearchP
       throw new Error("API key not found");
     }
 
-    const fieldNames = await FetchFieldNamesFromApi(db, table, apiKey);
+    const fieldNames = await FetchFieldNames(db, table, apiKey);
     const response = await FetchRecordById(db, table, recordId, fieldNames.map(field => field.name), apiKey);
     
     // Extract the record data from the response

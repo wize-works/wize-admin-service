@@ -63,6 +63,12 @@ export default function AdminFetchRecordButton({ databaseName, tableName, makeId
 
       {error && <p className="mt-4 text-red-500">Error: {error}</p>}
 
+      {!loading && tableData.length === 0 && !error && (
+        <div className="mt-4 p-6 text-center border rounded-md">
+          <p>No Records Found</p>
+        </div>
+      )}
+
       {tableData.length > 0 && (
         <div className="mt-4 w-full">
           <h3 className="text-xl font-bold mb-2">Table Data:</h3>

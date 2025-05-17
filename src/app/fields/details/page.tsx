@@ -1,9 +1,10 @@
 import { FetchApiKey, fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
-import { FetchFieldNamesFromApi, FetchRecordById } from "../../service-clients/wize-api-service-client";
+import { FetchFieldNames, FetchRecordById } from "../../service-clients/wize-api-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
 import AdminEditRecordButton from "./AdminEditRecordButton";
 import EditRecordButton from "./EditRecordButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
+import RecordTable from "@/app/components/RecordTable";
 
 type SearchParams = {
   db: string;
@@ -40,7 +41,6 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
       }
       
       try {
-        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAA");
         // Get API key - handle errors gracefully
         const apiKey = await FetchApiKey(selectedClient.value);
         if (!apiKey) {
@@ -50,7 +50,7 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
         // Get field names with better error handling
         let fieldNames;
         try {
-          fieldNames = await FetchFieldNamesFromApi(db, table, apiKey);
+          fieldNames = await FetchFieldNames(db, table, apiKey);
           console.log("Field names retrieved:", fieldNames);
         } catch (fieldError) {
           console.error("Error fetching field names:", fieldError);
@@ -121,7 +121,7 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
             recordId={recordId}
           />
         )}
-        { !isAdmin && (
+        {!isAdmin && (
           <EditRecordButton
             db={db}
             table={table}
@@ -132,19 +132,7 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
       <div className="bg-base-100 shadow-md rounded-lg overflow-hidden mt-4">
         <div className="p-4">
           <h2 className="text-xl font-semibold mb-4">Field Values</h2>
-          <dl className="divide-y ">
-            {Object.entries(record).map(([field, value]) => (
-              <div key={field} className="py-4 flex justify-between">
-                <dt className="font-medium w-1/3">{field}</dt>
-                <dd className="w-2/3">
-                  {typeof value === 'object'
-                    ? <pre className="whitespace-pre-wrap overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
-                    : String(value)
-                  }
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <RecordTable record={record} />
         </div>
       </div>
     </div>

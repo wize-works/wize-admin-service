@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FetchRecords, FetchFieldNamesFromApi } from "../../service-clients/wize-api-service-client";
+import { FetchRecords, FetchFieldNames } from "../../service-clients/wize-api-service-client";
 
 
 export async function GET(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const fieldInfos = await FetchFieldNamesFromApi(db, table, apiKey);
+    const fieldInfos = await FetchFieldNames(db, table, apiKey);
     const fieldNames = fieldInfos.map(fieldInfo => fieldInfo.name);
     
     // Get the records data
