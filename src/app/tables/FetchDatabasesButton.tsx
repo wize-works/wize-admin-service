@@ -15,7 +15,7 @@ export default function FetchDatabasesButton() {
       onClick={handleNavigate}
       className="px-4 py-2 btn btn-primary"
     >
-      Databases View
+      Back To Databases
     </button>
   );
 }

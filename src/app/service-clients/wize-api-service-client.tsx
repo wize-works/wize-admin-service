@@ -3,6 +3,7 @@ import { fetchFieldproperties } from "../graphqlQueries/fetchFeildproperties"
 import { fetchRecords } from "../graphqlQueries/fetchRecords";
 import { fetchRecordById } from "../graphqlQueries/fetchRecordById";
 import { updateRecordById } from "../graphqlQueries/updateRecordById";
+import { createRecord } from "../graphqlQueries/createRecord";
 
 const fetchWithAuth = async (url: string, graphqlQuery: string, variables: any = {}, options: RequestInit = {}, apiKey?: string) => {
   const headers = {
@@ -102,4 +103,17 @@ export const FetchFieldNames = async (db: string, table: string, apiKey: string)
     console.error('Error Details:', { graphqlQuery: query });
     throw error;
   }
-}
+};
+
+export const CreateRecord = async (db: string, table: string, data: any, apiKey?: string): Promise<any> => {
+  const url = `https://api.wize.works/${db}/graphql`;
+  var createMutation = "";
+  try {
+    createMutation = createRecord(table, data);
+    return fetchWithAuth(url, createMutation, { table, data }, {}, apiKey);
+  } catch (error) {
+    console.error('CreateRecord Error:', error);
+    console.error('Error Details:', { graphqlQuery: createMutation });
+    throw error;
+  }
+};

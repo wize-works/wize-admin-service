@@ -8,6 +8,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
   const [error, setError] = useState<string | null>(null); // State to store error messages
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [buttonPressed, setButtonPressed] = useState<boolean>(false); // Track if button was pressed
   
   useEffect(() => {
     // Get selected client ID from cookies
@@ -29,6 +30,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
       return;
     }
     
+    setButtonPressed(true); // Set that the button has been pressed
     setLoading(true);
     setError(null);
     try {
@@ -92,7 +94,8 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
 
       {error && <p className="mt-4 text-red-500">Error: {error}</p>}
 
-      {!loading && tableData.length === 0 && !error && (
+      {/* Only show "No Records Found" if button was pressed and no records were found */}
+      {buttonPressed && !loading && tableData.length === 0 && !error && (
         <div className="mt-4 p-6 text-center border rounded-md">
           <p>No Records Found</p>
         </div>

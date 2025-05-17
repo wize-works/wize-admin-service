@@ -1,9 +1,11 @@
 import { FetchApiKey, FetchFieldNames as FetchFieldNamesFromDb } from "../service-clients/wize-database-service-client";
 import { FetchFieldNames as FetchFieldnamesFromApi } from "../service-clients/wize-api-service-client";
-import AdminFetchRecordButton from "./AdminFetchRecordsButton";
-import FetchRecordsButton from "./FetchRecordsButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton";
+import FetchRecordsButton from "./FetchRecordsButton";
+import AddRecordButton from "./AddRecordButton";
+import AdminFetchRecordButton from "./AdminFetchRecordsButton";
+import AdminAddRecordButton from "./AdminAddRecordButton";
 
 // Add export configuration to indicate dynamic behavior
 export const dynamic = 'force-dynamic';
@@ -71,11 +73,6 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
             {/* Only show the buttons for admin users */}
 
             <div className="flex gap-4 mt-4">
-              <FetchDatabaseTablesButton
-                databaseName={databaseName}
-                tableName={tableName}
-                makeIdLinkable={true}
-              />
               {selectedClient.value === '0' && (
                 <AdminFetchRecordButton
                   databaseName={databaseName}
@@ -85,6 +82,25 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
               )}
               {selectedClient.value !== '0' && (
                 <FetchRecordsButton
+                  databaseName={databaseName}
+                  tableName={tableName}
+                  makeIdLinkable={true}
+                />
+              )}
+                <FetchDatabaseTablesButton
+                databaseName={databaseName}
+                tableName={tableName}
+                makeIdLinkable={true}
+              />
+                {selectedClient.value === '0' && (
+                <AdminAddRecordButton
+                  databaseName={databaseName}
+                  tableName={tableName}
+                  makeIdLinkable={true}
+                />
+              )}
+              {selectedClient.value !== '0' && (
+                <AddRecordButton
                   databaseName={databaseName}
                   tableName={tableName}
                   makeIdLinkable={true}

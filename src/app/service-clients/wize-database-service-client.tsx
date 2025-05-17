@@ -354,3 +354,40 @@ export async function FetchApiKey(_id: string): Promise<string | null> {
     }
   });
 }
+
+/**
+ * Creates a new record in the specified database and collection
+ * @param db Database name
+ * @param table Collection name
+ * @param data Record data to insert
+ * @returns The inserted document including the generated _id
+ */
+export async function createRecord(db: string, table: string, data: Record<string, any>): Promise<any> {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try {
+      const database = mongoClient.db(db);
+      const collection = database.collection(table);
+      
+      // Prepare the document for insertion
+      const document = {
+        ...data,
+        createdAt: new Date() // Add creation timestamp
+      };
+      
+      // Insert the document
+      const result = await collection.insertOne(document);
+      
+      if (!result.acknowledged) {
+        throw new Error("Failed to insert document");
+      }
+      
+      // Return the inserted document with its _id
+      return { 
+        _id: result.insertedId,
+        ...document 
+      };
+    } catch (error) {
+      throw error;
+    }
+  });
+}
