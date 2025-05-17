@@ -34,11 +34,11 @@ export default async function EditPage({ searchParams }: { searchParams: SearchP
     const response = await FetchRecordById(db, table, recordId, fieldNames.map(field => field.name), apiKey);
     
     // Extract the record data from the response
-    if (!response || !response.findCommentById) {
+    if (!response) {
       throw new Error("Record not found");
     }
     
-    record = response.findCommentById;
+    record = response;
     
     if (!record) {
       throw new Error("Record not found");
