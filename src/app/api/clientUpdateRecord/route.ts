@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSelectedClientFromCookies } from '@/context/clientActions';
-import { updateRecord } from '@/app/service-clients/wize-database-service-client';
 import { UpdateRecord } from '@/app/service-clients/wize-api-service-client';
+import { getSelectedClientFromCookies } from '@/context/clientActions';
 import { FetchApiKey } from '@/app/service-clients/wize-database-service-client';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user information
+    // Get the selected client from cookies
     const selectedClient = await getSelectedClientFromCookies();
     if (!selectedClient?.value) {
       return NextResponse.json({ error: 'No client selected' }, { status: 400 });
     }
-
-    const isAdmin = selectedClient.value === '0';
+    
+    // Get form data
     const formData = await request.formData();
     const db = formData.get('db') as string;
     const table = formData.get('table') as string;
@@ -50,26 +49,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Process the request based on user role
-    let result;
-    if (isAdmin) {
-      // Use direct database access for admin
-      result = await updateRecord(db, table, recordId, updatedData);
-    } else {
-      // Use API for regular users
-      const apiKey = await FetchApiKey(selectedClient.value);
-      if (!apiKey) {
-        return NextResponse.json({ error: 'API key not found for client' }, { status: 400 });
-      }
-      result = await UpdateRecord(db, table, recordId, updatedData, apiKey);
+    // Get API key for the client
+    const apiKey = await FetchApiKey(selectedClient.value);
+    if (!apiKey && selectedClient.value !== '0') {
+      return NextResponse.json({ error: 'API key not found for client' }, { status: 400 });
     }
 
+    // Update the record using the API service
+    const result = await UpdateRecord(db, table, recordId, updatedData, apiKey || undefined);
+    
     // Redirect to the specified URL or return success response
     if (redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
     
-    // Otherwise return success response with the updated record
     return NextResponse.json({ 
       success: true,
       record: result

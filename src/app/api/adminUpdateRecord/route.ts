@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSelectedClientFromCookies } from '@/context/clientActions';
 import { updateRecord } from '@/app/service-clients/wize-database-service-client';
-import { UpdateRecord } from '@/app/service-clients/wize-api-service-client';
-import { FetchApiKey } from '@/app/service-clients/wize-database-service-client';
+import { getSelectedClientFromCookies } from '@/context/clientActions';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user information
+    // Verify admin permissions
     const selectedClient = await getSelectedClientFromCookies();
-    if (!selectedClient?.value) {
-      return NextResponse.json({ error: 'No client selected' }, { status: 400 });
+    if (!selectedClient || selectedClient.value !== '0') {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
-
-    const isAdmin = selectedClient.value === '0';
+    
     const formData = await request.formData();
     const db = formData.get('db') as string;
     const table = formData.get('table') as string;
@@ -26,45 +23,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract the record data from the form (excluding db, table, recordId)
-    const updatedData: Record<string, any> = {};
+    const updatedRecord: Record<string, any> = {};
     for (const [key, value] of formData.entries()) {
       if (key !== 'db' && key !== 'table' && key !== 'recordId') {
         // Handle conversion of types
         if (value === 'true') {
-          updatedData[key] = true;
+          updatedRecord[key] = true;
         } else if (value === 'false') {
-          updatedData[key] = false;
-        } else if (value === '') {
-          updatedData[key] = null;
+          updatedRecord[key] = false;
         } else if (!isNaN(Number(value)) && value !== '') {
-          updatedData[key] = Number(value);
+          updatedRecord[key] = Number(value);
         } else if (value && (value as string).startsWith('{') || (value as string).startsWith('[')) {
           try {
-            updatedData[key] = JSON.parse(value as string);
+            updatedRecord[key] = JSON.parse(value as string);
           } catch (e) {
-            updatedData[key] = value;
+            updatedRecord[key] = value;
           }
         } else {
-          updatedData[key] = value;
+          updatedRecord[key] = value;
         }
       }
     }
 
-    // Process the request based on user role
-    let result;
-    if (isAdmin) {
-      // Use direct database access for admin
-      result = await updateRecord(db, table, recordId, updatedData);
-    } else {
-      // Use API for regular users
-      const apiKey = await FetchApiKey(selectedClient.value);
-      if (!apiKey) {
-        return NextResponse.json({ error: 'API key not found for client' }, { status: 400 });
-      }
-      result = await UpdateRecord(db, table, recordId, updatedData, apiKey);
+    // Use our updateRecord function to update the record
+    const result = await updateRecord(db, table, recordId, updatedRecord);
+    
+    if (!result) {
+      throw new Error('Record not found or update failed');
     }
 
-    // Redirect to the specified URL or return success response
+    // Redirect to the details page if a redirect URL was provided
     if (redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }

@@ -391,3 +391,46 @@ export async function createRecord(db: string, table: string, data: Record<strin
     }
   });
 }
+
+/**
+ * Updates an existing record in the specified database and collection
+ * @param db Database name
+ * @param table Collection name
+ * @param recordId ID of the record to update
+ * @param data Fields to update in the record
+ * @returns The updated document
+ */
+export async function updateRecord(db: string, table: string, recordId: string, data: Record<string, any>): Promise<any> {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try {
+      const database = mongoClient.db(db);
+      const collection = database.collection(table);
+      
+      // Prepare the document for update
+      const updateData = {
+        ...data,
+        updatedAt: new Date() // Add update timestamp
+      };
+      
+      // Convert string ID to ObjectId
+      const objectId = new ObjectId(recordId);
+      
+      // Execute the update operation
+      const result = await collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: updateData },
+        { returnDocument: 'after' } // Return the document after update
+      );
+      
+      if (!result) {
+        throw new Error("Record not found or update failed");
+      }
+      
+      // Return the updated document
+      return result;
+    } catch (error) {
+      console.error(`Error updating record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
+      throw error;
+    }
+  });
+}

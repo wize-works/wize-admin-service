@@ -54,7 +54,7 @@ export default async function AdminEditPage({ searchParams }: { searchParams: Se
       </div>
      
       <form 
-        action={`/api/updateRecord?redirect=/fields/details?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}&recordId=${encodeURIComponent(recordId)}`} 
+        action={`/api/adminUpdateRecord?redirect=/fields/details?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}&recordId=${encodeURIComponent(recordId)}`} 
         method="POST" 
         className="space-y-6"
       >
