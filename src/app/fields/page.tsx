@@ -76,12 +76,12 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
                 tableName={tableName}
                 makeIdLinkable={true}
               />
-              <FetchDatabaseTablesButton
+              <AddRecordButton
                 databaseName={databaseName}
                 tableName={tableName}
                 makeIdLinkable={true}
               />
-              <AddRecordButton
+              <FetchDatabaseTablesButton
                 databaseName={databaseName}
                 tableName={tableName}
                 makeIdLinkable={true}

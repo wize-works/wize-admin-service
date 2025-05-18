@@ -117,8 +117,8 @@ export default async function CreatePage({ searchParams }: { searchParams: Searc
           </div>
           
           <div className="flex justify-end mt-6 space-x-3">
-            <NavigateBackButton />
             <button type="submit" className="btn btn-primary">Create Record</button>
+            <NavigateBackButton />
           </div>
         </div>
       </form>

@@ -127,10 +127,10 @@ export default async function EditPage({ searchParams }: { searchParams: SearchP
             {selectedClient.value === '0' && (
               <h2 className="text-error font-bold text-lg mb-4">WARNING! This is a direct database edit.</h2>
             )}
-            <NavigateBackButton />
             <button type="submit" className={`btn ${selectedClient.value === '0' ? 'btn-error' : 'btn-primary'}`}>
               Save Changes
             </button>
+            <NavigateBackButton />
           </div>
         </div>
       </form>
