@@ -87,8 +87,10 @@ export const Sidebar: React.FC = () => {
 
                     <div className="mt-6 px-2">
                         <ul className="space-y-2">
+                            {/* 
                             <NavItem href="/settings" key="settings" icon="fa-regular fa-gear" text="Settings" isCollapsed={isCollapsed} />
                             <NavItem href="/help" key="help" icon="fa-regular fa-circle-question" text="Help & Support" isCollapsed={isCollapsed} />
+                            */}
                         </ul>
                     </div>
                 </div>
