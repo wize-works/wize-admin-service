@@ -1,7 +1,6 @@
 import { FetchApiKey, fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
 import { FetchFieldNames, FetchRecordById } from "../../service-clients/wize-api-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
-import AdminEditRecordButton from "./AdminEditRecordButton";
 import EditRecordButton from "./EditRecordButton";
 import { getSelectedClientFromCookies } from "@/context/clientActions";
 import RecordTable from "@/app/components/RecordTable";
@@ -39,14 +38,14 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
       if (!tenantId) {
         throw new Error("Tenant ID is null. Unable to fetch the record.");
       }
-      
+
       try {
         // Get API key - handle errors gracefully
         const apiKey = await FetchApiKey(selectedClient.value);
         if (!apiKey) {
           throw new Error("API key not found");
         }
-        
+
         // Get field names with better error handling
         let fieldNames;
         try {
@@ -57,15 +56,15 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
           // Use default field names
           fieldNames = [{ name: '_id', type: 'String' }];
         }
-        
+
         // Get record data
         const fieldNameStrings = fieldNames.map(field => field.name);
         record = await FetchRecordById(db, table, recordId, fieldNameStrings, apiKey);
-        
+
         // Extract the record from the response if needed
         const tableCapitalized = table.charAt(0).toUpperCase() + table.slice(1);
         const findMethodName = `find${tableCapitalized}ById`;
-        
+
         if (record && record[findMethodName]) {
           record = record[findMethodName];
         }
@@ -110,24 +109,16 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
         <p><strong>Client:</strong> {selectedClient.label} {selectedClient.value === '0' ? '(Admin)' : ''}</p>
       </div>
       <div className="mt-4 flex space-x-4">
+        <EditRecordButton
+          db={db}
+          table={table}
+          recordId={recordId}
+          isAdmin={isAdmin}
+        />
         <FetchFieldsDataButton
           db={db}
           table={table}
         />
-        {isAdmin && (
-          <AdminEditRecordButton
-            db={db}
-            table={table}
-            recordId={recordId}
-          />
-        )}
-        {!isAdmin && (
-          <EditRecordButton
-            db={db}
-            table={table}
-            recordId={recordId}
-          />
-        )}
       </div>
       <div className="bg-base-100 shadow-md rounded-lg overflow-hidden mt-4">
         <div className="p-4">

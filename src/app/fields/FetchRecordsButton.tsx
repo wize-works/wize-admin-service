@@ -9,7 +9,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
   const [loading, setLoading] = useState<boolean>(false); // State to indicate loading
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [buttonPressed, setButtonPressed] = useState<boolean>(false); // Track if button was pressed
-  
+
   useEffect(() => {
     // Get selected client ID from cookies
     const fetchClientId = async () => {
@@ -34,20 +34,7 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     setLoading(true);
     setError(null);
     try {
-
-      const apiKeyResponse = await fetch(`/api/fetchApiKey?clientId=${encodeURIComponent(selectedClientId)}`);
-      if (!apiKeyResponse.ok) {
-        throw new Error(`Failed to get API key: ${apiKeyResponse.status}`);
-      }
-      const apiKeyData = await apiKeyResponse.json();
-      if (!apiKeyData) {  
-        throw new Error("API key not found");
-      }
-      
-      // Extract the actual API key value from the response
-      const apiKey = apiKeyData.apiKey || apiKeyData;
-      
-      const response = await fetch(`/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}&apiKey=${encodeURIComponent(apiKey)}&identityKey=${encodeURIComponent(selectedClientId)}`);
+      const response = await fetch(`/api/fetchRecords?db=${encodeURIComponent(databaseName)}&table=${encodeURIComponent(tableName)}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -86,12 +73,11 @@ export default function FetchRecordsButton({ databaseName, tableName, makeIdLink
     <div>
       <button
         onClick={handleFetchRecords}
-        className="px-4 py-2 btn btn-primary"
+        className={`px-4 py-2 btn ${selectedClientId === '0' ? "btn-error" : "btn-primary"}`}
         disabled={loading || !selectedClientId}
       >
         {loading ? "Fetching..." : "Fetch Records"}
       </button>
-
       {error && <p className="mt-4 text-red-500">Error: {error}</p>}
 
       {/* Only show "No Records Found" if button was pressed and no records were found */}

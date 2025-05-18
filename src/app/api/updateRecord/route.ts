@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSelectedClientFromCookies } from '@/context/clientActions';
-import { updateRecord } from '@/app/service-clients/wize-database-service-client';
+import { updateRecord as adminUpdateRecord, FetchApiKey } from '@/app/service-clients/wize-database-service-client';
 import { UpdateRecord } from '@/app/service-clients/wize-api-service-client';
-import { FetchApiKey } from '@/app/service-clients/wize-database-service-client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
     let result;
     if (isAdmin) {
       // Use direct database access for admin
-      result = await updateRecord(db, table, recordId, updatedData);
+      result = await adminUpdateRecord(db, table, recordId, updatedData);
     } else {
       // Use API for regular users
       const apiKey = await FetchApiKey(selectedClient.value);

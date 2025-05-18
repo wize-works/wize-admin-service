@@ -28,6 +28,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Searc
     if (selectedClient.value === '0') {
       // Admin user - use database service
       fieldInfo = await FetchFieldNames(db, table, '0');
+      
     } else {
       // Regular user - use API service
       const apiKey = await FetchApiKey(selectedClient.value);

@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateRecord } from '@/app/service-clients/wize-api-service-client';
 import { getSelectedClientFromCookies } from '@/context/clientActions';
+import { createRecord } from '@/app/service-clients/wize-database-service-client';
+import { CreateRecord } from '@/app/service-clients/wize-api-service-client';
 import { FetchApiKey } from '@/app/service-clients/wize-database-service-client';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the selected client from cookies
+    // Get user information
     const selectedClient = await getSelectedClientFromCookies();
     if (!selectedClient?.value) {
       return NextResponse.json({ error: 'No client selected' }, { status: 400 });
     }
+
+    const isAdmin = selectedClient.value === '0';
     
     // Get form data
     const formData = await request.formData();
@@ -33,7 +36,6 @@ export async function POST(request: NextRequest) {
         } else if (value === 'false') {
           newRecord[key] = false;
         } else if (value === '') {
-          // Skip empty fields or set to null based on your preference
           newRecord[key] = null;
         } else if (!isNaN(Number(value)) && value !== '') {
           newRecord[key] = Number(value);
@@ -49,21 +51,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get API key for the client
-    const apiKey = await FetchApiKey(selectedClient.value);
-    if (!apiKey && selectedClient.value !== '0') {
-      return NextResponse.json({ error: 'API key not found for client' }, { status: 400 });
+    // Process the request based on user role
+    let result;
+    if (isAdmin) {
+      // Use direct database access for admin
+      result = await createRecord(db, table, newRecord);
+    } else {
+      // Use API for regular users
+      const apiKey = await FetchApiKey(selectedClient.value);
+      if (!apiKey) {
+        return NextResponse.json({ error: 'API key not found for client' }, { status: 400 });
+      }
+      result = await CreateRecord(db, table, newRecord, apiKey);
     }
-
-    // Create the record using the API service
-    const createdRecord = await CreateRecord(db, table, newRecord, apiKey || undefined);
 
     // Redirect to the specified URL or return success response
     if (redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
     
-    return NextResponse.json({ success: true, record: createdRecord }, { status: 201 });
+    // Otherwise return success response with the created record
+    return NextResponse.json({ 
+      success: true,
+      record: result
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating record:', error);
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });

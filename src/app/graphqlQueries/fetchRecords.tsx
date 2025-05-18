@@ -1,4 +1,6 @@
-export const fetchRecords = (table: string, fieldNames?: string[]) => {
+import { FieldInfo } from "../models/FieldInfo"
+
+export const fetchRecords = (table: string, fieldInfo?: FieldInfo[]) => {
   const tableCapitalized = table.charAt(0).toUpperCase() + table.slice(1);
   
   let query = `
@@ -6,10 +8,10 @@ export const fetchRecords = (table: string, fieldNames?: string[]) => {
         find${tableCapitalized} {
           data {`;
 
-  if (Array.isArray(fieldNames) && fieldNames.length > 0) {
-    fieldNames.forEach(field => {
+  if (Array.isArray(fieldInfo) && fieldInfo.length > 0) {
+    fieldInfo.forEach(fieldInfo => {
       query += `
-            ${field}`;
+            ${fieldInfo.name}`;
     });
   } else {
     query += `

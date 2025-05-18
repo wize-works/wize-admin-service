@@ -69,11 +69,12 @@ export const FetchRecordById = async (db: string, table: string, recordId: strin
   }
 };
 
-export const FetchRecords = async (db: string, table: string, fieldNames?: string[], apiKey?: string): Promise<any[]> => {
+export const FetchRecords = async (db: string, table: string, fieldNames?: FieldInfo[], apiKey?: string): Promise<any[]> => {
   const url = `https://api.wize.works/${db}/graphql`;
   var query = "";
   try {
     query = fetchRecords(table, fieldNames);
+    console.log("GraphQL Query for records:", query);
     return fetchWithAuth(url, query, {}, {}, apiKey);
   }
   catch (error) {
@@ -87,7 +88,10 @@ export const FetchFieldNames = async (db: string, table: string, apiKey: string)
   const url = `https://api.wize.works/${db}/graphql`;
   var query = "";
   try {
-    query = fetchFieldproperties(table.slice(0, -1));
+    if (table.endsWith('s')) {
+      table = table.slice(0, -1);
+    }
+    query = fetchFieldproperties(table);
     console.log("GraphQL Query for field names:", query);
     const response = await fetchWithAuth(url, query, {}, {}, apiKey);
 

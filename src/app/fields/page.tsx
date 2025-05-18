@@ -4,8 +4,6 @@ import { getSelectedClientFromCookies } from "@/context/clientActions";
 import FetchDatabaseTablesButton from "./FetchDatabaseTablesButton";
 import FetchRecordsButton from "./FetchRecordsButton";
 import AddRecordButton from "./AddRecordButton";
-import AdminFetchRecordButton from "./AdminFetchRecordsButton";
-import AdminAddRecordButton from "./AdminAddRecordButton";
 
 // Add export configuration to indicate dynamic behavior
 export const dynamic = 'force-dynamic';
@@ -35,7 +33,7 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
     const apikey = await FetchApiKey(selectedClientId ?? '');
     fieldInfo = selectedClient && apikey ? await FetchFieldnamesFromApi(databaseName, tableName, apikey) : [];
   }
-  
+
   return (
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-4">Database: {databaseName}</h1>
@@ -73,39 +71,21 @@ export default async function FieldsPage({ searchParams }: { searchParams: { db?
             {/* Only show the buttons for admin users */}
 
             <div className="flex gap-4 mt-4">
-              {selectedClient.value === '0' && (
-                <AdminFetchRecordButton
-                  databaseName={databaseName}
-                  tableName={tableName}
-                  makeIdLinkable={true}
-                />
-              )}
-              {selectedClient.value !== '0' && (
-                <FetchRecordsButton
-                  databaseName={databaseName}
-                  tableName={tableName}
-                  makeIdLinkable={true}
-                />
-              )}
-                <FetchDatabaseTablesButton
+              <FetchRecordsButton
                 databaseName={databaseName}
                 tableName={tableName}
                 makeIdLinkable={true}
               />
-                {selectedClient.value === '0' && (
-                <AdminAddRecordButton
-                  databaseName={databaseName}
-                  tableName={tableName}
-                  makeIdLinkable={true}
-                />
-              )}
-              {selectedClient.value !== '0' && (
-                <AddRecordButton
-                  databaseName={databaseName}
-                  tableName={tableName}
-                  makeIdLinkable={true}
-                />
-              )}
+              <FetchDatabaseTablesButton
+                databaseName={databaseName}
+                tableName={tableName}
+                makeIdLinkable={true}
+              />
+              <AddRecordButton
+                databaseName={databaseName}
+                tableName={tableName}
+                makeIdLinkable={true}
+              />
             </div>
           </div>
         </>

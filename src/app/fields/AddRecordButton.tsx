@@ -38,10 +38,10 @@ export default function AddRecordButton({ databaseName, tableName, makeIdLinkabl
         <div>
             <button
                 onClick={handleNavigate}
-                className="px-4 py-2 btn btn-primary"
+                className={`px-4 py-2 btn ${selectedClientId === '0' ? "btn-error" : "btn-primary"}`}
                 disabled={loading || !selectedClientId}
             >
-                {loading ? "Loading..." : "Add Record"}
+                {loading ? "Loading..." : (selectedClientId === "0" ? "ADMIN: Add Record" : "Add Record")}
             </button>
 
             {error && <p className="mt-4 text-red-500">Error: {error}</p>}

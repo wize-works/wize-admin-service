@@ -252,7 +252,7 @@ export async function FetchFieldNames(databaseName: string, tableName: string, c
 }
 
 // Function to fetch all data from a given table (collection) with optional schema-based filtering
-export async function QueryTable(databaseName: string, tableName: string, identityId?: string) {
+export async function fetchRecords(databaseName: string, tableName: string, identityId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
       const database = mongoClient.db(databaseName);
@@ -261,7 +261,7 @@ export async function QueryTable(databaseName: string, tableName: string, identi
       // Build query object based on tenantId from schemaId
       let query = {};
       
-      if (identityId) {
+      if (identityId && identityId !== '0') {
         // Get tenantId from configuration schema
         const tenantId = await getTenantIdFromConfigurationId(identityId);
         
