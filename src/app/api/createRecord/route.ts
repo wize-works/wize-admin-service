@@ -65,18 +65,31 @@ export async function POST(request: NextRequest) {
       result = await CreateRecord(db, table, newRecord, apiKey);
     }
 
-    // Redirect to the specified URL or return success response
-    if (redirectUrl) {
-      return NextResponse.redirect(new URL(redirectUrl, request.url));
+    // If we have a successful result and an ID from the created record
+    if (result && result._id) {
+      // Always redirect to the details page with explicit parameters
+      const detailsUrl = `/fields/details?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}&recordId=${encodeURIComponent(result._id)}`;
+      return NextResponse.redirect(new URL(detailsUrl, request.url));
+    } 
+    // If we have a successful result but no ID
+    else if (result) {
+      // Always redirect to the fields page with explicit parameters
+      return NextResponse.redirect(
+        new URL(`/fields?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`, request.url)
+      );
     }
     
-    // Otherwise return success response with the created record
-    return NextResponse.json({ 
-      success: true,
-      record: result
-    }, { status: 201 });
+    // If we get here, something went wrong with the record creation
+    return NextResponse.redirect(
+      new URL(`/error?message=${encodeURIComponent("Failed to create record")}`, request.url)
+    );
   } catch (error) {
     console.error('Error creating record:', error);
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    
+    // Redirect to error page with the error message
+    const errorMessage = encodeURIComponent(error instanceof Error ? error.message : 'Failed to create record');
+    return NextResponse.redirect(
+      new URL(`/error?message=${errorMessage}`, request.url)
+    );
   }
 }

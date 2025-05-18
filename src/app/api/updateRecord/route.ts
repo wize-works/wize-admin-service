@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     const table = formData.get('table') as string;
     const recordId = formData.get('recordId') as string;
     
-    // Get optional redirect URL from query params
-    const redirectUrl = request.nextUrl.searchParams.get('redirect');
+    // Get optional redirect URL from query params - but keep the full original string
+    const redirectUrlParam = request.nextUrl.searchParams.get('redirect');
     
     if (!db || !table || !recordId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -63,18 +63,21 @@ export async function POST(request: NextRequest) {
       result = await UpdateRecord(db, table, recordId, updatedData, apiKey);
     }
 
-    // Redirect to the specified URL or return success response
-    if (redirectUrl) {
-      return NextResponse.redirect(new URL(redirectUrl, request.url));
+    // If we have a successful result
+    if (result) {
+      // Always redirect to the details page with all parameters explicitly set
+      const detailsUrl = `/fields/details?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}&recordId=${encodeURIComponent(recordId)}`;
+      return NextResponse.redirect(new URL(detailsUrl, request.url));
     }
     
-    // Otherwise return success response with the updated record
-    return NextResponse.json({ 
-      success: true,
-      record: result
-    });
+    // If we get here, something went wrong with the record update
   } catch (error) {
     console.error('Error updating record:', error);
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    
+    // Redirect to error page with the error message
+    const errorMessage = encodeURIComponent(error instanceof Error ? error.message : 'Failed to update record');
+    return NextResponse.redirect(
+      new URL(`/error?message=${errorMessage}`, request.url)
+    );
   }
 }

@@ -9,39 +9,162 @@ export async function getMongoClient(): Promise<MongoClient> {
   return mongoProvider.getConnection();
 }
 
-export async function FetchClientKeys(): Promise<{ [key: string]: string }> {
+/**
+ * Fetches records from a specified database and table
+ * @param databaseName 
+ * @param tableName 
+ * @param identityId 
+ * @returns 
+ */
+export async function fetchRecords(databaseName: string, tableName: string, identityId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      const database = mongoClient.db("wize-identity");
-      const collection = database.collection("tenants");
-
-      const clientKeys = await collection
-        .find({ clientApp: { $exists: true } }, { projection: { clientApp: 1, _id: 1 } }).toArray();
-
-      // Transform the results into a dictionary using _id as key and clientApp as value
-      const result: { [key: string]: string } = {};
-
-      clientKeys.forEach((clientKey, index) => {
-        // Using _id as the dictionary key and clientApp as the value
-        if (clientKey._id && clientKey.clientApp) {
-          // Convert ObjectId to string for the key
-          const idKey = clientKey._id.toString();
-          result[idKey] = clientKey.clientApp;
-        } else {
-          // Log if clientApp is missing
-          console.warn(`Skipping record at index ${index} - missing clientApp field:`, clientKey);
-        }
-      });
+      const database = mongoClient.db(databaseName);
+      const collection = database.collection(tableName);
       
-      return result;
+      // Build query object based on tenantId from schemaId
+      let query = {};
+      
+      if (identityId && identityId !== '0') {
+        // Get tenantId from configuration schema
+        const tenantId = await fetchTenantId(identityId);
+        
+        if (tenantId) {
+          query = { tenantId: tenantId };
+        }
+      }
+      
+      // Fetch documents from the collection with optional filter
+      const data = await collection.find(query).toArray();
+
+      return data;
     } catch (error) {
-      console.error("Error fetching client keys:", error);
+      console.error(`Error querying table "${tableName}" in database "${databaseName}"${identityId ? ` with schemaId: ${identityId}` : ''}:`, error);
       throw error;
     }
   });
 }
 
-// Function to fetch all database names with optional filtering based on client app
+/**
+ * Fetch a record from the database by its ID
+ * @param db 
+ * @param table 
+ * @param recordId 
+ * @param tenantId 
+ * @param isAdmin 
+ * @returns 
+ */
+export async function fetchRecordById(db: string, table: string, recordId: string, tenantId: string, isAdmin: boolean = false) {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try{
+      const database = mongoClient.db(db);
+      const collection = database.collection(table);
+
+      const recordIdString = typeof recordId === 'string' ? recordId : (recordId as ObjectId).toString();
+      
+      // Build query - if admin, only filter by ID; otherwise include tenantId
+      const query = isAdmin 
+        ? { _id: new ObjectId(recordIdString) }
+        : { _id: new ObjectId(recordIdString), tenantId: tenantId };
+      
+      const record = await collection.findOne(query);
+
+      return record;
+    } catch (error) {
+      console.error(`Error fetching data for record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
+      throw error;
+    }
+  });
+}
+
+/**
+ * Creates a new record in the specified database and collection
+ * @param db Database name
+ * @param table Collection name
+ * @param data Record data to insert
+ * @returns The inserted document including the generated _id
+ */
+export async function createRecord(db: string, table: string, data: Record<string, any>): Promise<any> {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try {
+      const database = mongoClient.db(db);
+      const collection = database.collection(table);
+      
+      // Prepare the document for insertion
+      const document = {
+        ...data,
+        createdAt: new Date() // Add creation timestamp
+      };
+      
+      // Insert the document
+      const result = await collection.insertOne(document);
+      
+      if (!result.acknowledged) {
+        throw new Error("Failed to insert document");
+      }
+      
+      // Return the inserted document with its _id
+      return { 
+        _id: result.insertedId,
+        ...document 
+      };
+    } catch (error) {
+      throw error;
+    }
+  });
+}
+
+/**
+ * Updates an existing record in the specified database and collection
+ * @param db Database name
+ * @param table Collection name
+ * @param recordId ID of the record to update
+ * @param data Fields to update in the record
+ * @returns The updated document
+ */
+export async function updateRecord(db: string, table: string, recordId: string, data: Record<string, any>): Promise<any> {
+  return mongoProvider.withConnection(async (mongoClient) => {
+    try {
+      const database = mongoClient.db(db);
+      const collection = database.collection(table);
+      
+      // Prepare the document for update
+      const updateData = {
+        ...data,
+        updatedAt: new Date() // Add update timestamp
+      };
+      
+      // Convert string ID to ObjectId
+      const objectId = new ObjectId(recordId);
+      
+      // Execute the update operation
+      const result = await collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: updateData },
+        { returnDocument: 'after' } // Return the document after update
+      );
+      
+      if (!result) {
+        throw new Error("Record not found or update failed");
+      }
+      
+      // Return the updated document
+      return result;
+    } catch (error) {
+      console.error(`Error updating record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
+      throw error;
+    }
+  });
+}
+
+
+/**
+ * Fetches the names of all databases in the MongoDB instance
+ * @param db Database name
+ * @param table Collection name
+ * @param recordId ID of the record to delete
+ * @returns The deleted document
+ */
 export async function FetchDatabaseNames(clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
@@ -71,7 +194,12 @@ export async function FetchDatabaseNames(clientId?: string) {
   });
 }
 
-// Function to fetch all table (collection) names in a given database with optional client filtering
+/**
+ * Fetches the names of all tables (collections) in a specified database
+ * @param databaseName The name of the database to query
+ * @param clientId The ID of the client making the request (optional)
+ * @returns An array of table names
+ */
 export async function FetchTableNames(databaseName: string, clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
@@ -89,7 +217,7 @@ export async function FetchTableNames(databaseName: string, clientId?: string) {
       // Otherwise, filter tables based on tenant ID
       else {
         // First, get the tenantId from the clientId (which is the identity/schema ID)
-        const tenantId = await getTenantIdFromConfigurationId(clientId);
+        const tenantId = await fetchTenantId(clientId);
         
         if (!tenantId) {
           return [];
@@ -126,7 +254,13 @@ export async function FetchTableNames(databaseName: string, clientId?: string) {
   });
 }
 
-// Function to fetch all field names in a given table (collection)
+/**
+ * Fetches the field names and types from a specified database and table
+ * @param databaseName The name of the database to query
+ * @param tableName The name of the table (collection) to query
+ * @param clientId The ID of the client making the request (optional)
+ * @returns An array of field names and their types
+ */
 export async function FetchFieldNames(databaseName: string, tableName: string, clientId?: string) {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
@@ -168,7 +302,7 @@ export async function FetchFieldNames(databaseName: string, tableName: string, c
       } 
       // For non-admin clients, filter fields based on tenantId
       else {
-        const tenantId = await getTenantIdFromConfigurationId(clientId);
+        const tenantId = await fetchTenantId(clientId);
         
         if (!tenantId) {
           return [{ name: '_id', type: 'string' }];
@@ -251,54 +385,37 @@ export async function FetchFieldNames(databaseName: string, tableName: string, c
   });
 }
 
-// Function to fetch all data from a given table (collection) with optional schema-based filtering
-export async function fetchRecords(databaseName: string, tableName: string, identityId?: string) {
+/**
+ * Fetches all client keys from the database
+ * @returns A dictionary of client keys with _id as key and clientApp as value
+ */
+export async function FetchClientKeys(): Promise<{ [key: string]: string }> {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
-      const database = mongoClient.db(databaseName);
-      const collection = database.collection(tableName);
-      
-      // Build query object based on tenantId from schemaId
-      let query = {};
-      
-      if (identityId && identityId !== '0') {
-        // Get tenantId from configuration schema
-        const tenantId = await getTenantIdFromConfigurationId(identityId);
-        
-        if (tenantId) {
-          query = { tenantId: tenantId };
+      const database = mongoClient.db("wize-identity");
+      const collection = database.collection("tenants");
+
+      const clientKeys = await collection
+        .find({ clientApp: { $exists: true } }, { projection: { clientApp: 1, _id: 1 } }).toArray();
+
+      // Transform the results into a dictionary using _id as key and clientApp as value
+      const result: { [key: string]: string } = {};
+
+      clientKeys.forEach((clientKey, index) => {
+        // Using _id as the dictionary key and clientApp as the value
+        if (clientKey._id && clientKey.clientApp) {
+          // Convert ObjectId to string for the key
+          const idKey = clientKey._id.toString();
+          result[idKey] = clientKey.clientApp;
+        } else {
+          // Log if clientApp is missing
+          console.warn(`Skipping record at index ${index} - missing clientApp field:`, clientKey);
         }
-      }
+      });
       
-      // Fetch documents from the collection with optional filter
-      const data = await collection.find(query).toArray();
-
-      return data;
+      return result;
     } catch (error) {
-      console.error(`Error querying table "${tableName}" in database "${databaseName}"${identityId ? ` with schemaId: ${identityId}` : ''}:`, error);
-      throw error;
-    }
-  });
-}
-
-export async function fetchRecordById(db: string, table: string, recordId: string, tenantId: string, isAdmin: boolean = false) {
-  return mongoProvider.withConnection(async (mongoClient) => {
-    try{
-      const database = mongoClient.db(db);
-      const collection = database.collection(table);
-
-      const recordIdString = typeof recordId === 'string' ? recordId : (recordId as ObjectId).toString();
-      
-      // Build query - if admin, only filter by ID; otherwise include tenantId
-      const query = isAdmin 
-        ? { _id: new ObjectId(recordIdString) }
-        : { _id: new ObjectId(recordIdString), tenantId: tenantId };
-      
-      const record = await collection.findOne(query);
-
-      return record;
-    } catch (error) {
-      console.error(`Error fetching data for record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
+      console.error("Error fetching client keys:", error);
       throw error;
     }
   });
@@ -309,7 +426,7 @@ export async function fetchRecordById(db: string, table: string, recordId: strin
  * @param identityId - The object ID to look up
  * @returns The associated tenantId as a string or null if not found
  */
-export async function getTenantIdFromConfigurationId(identityId: string): Promise<string | null> {
+export async function fetchTenantId(identityId: string): Promise<string | null> {
   return mongoProvider.withConnection(async (mongoClient) => {
     try {
       // Assuming the configuration is stored in a "wize-config" database with a "schemas" collection
@@ -350,86 +467,6 @@ export async function FetchApiKey(_id: string): Promise<string | null> {
       return result.key;
     } catch (error) {
       console.error(`Error getting api key for object ID "${_id}":`, error);
-      throw error;
-    }
-  });
-}
-
-/**
- * Creates a new record in the specified database and collection
- * @param db Database name
- * @param table Collection name
- * @param data Record data to insert
- * @returns The inserted document including the generated _id
- */
-export async function createRecord(db: string, table: string, data: Record<string, any>): Promise<any> {
-  return mongoProvider.withConnection(async (mongoClient) => {
-    try {
-      const database = mongoClient.db(db);
-      const collection = database.collection(table);
-      
-      // Prepare the document for insertion
-      const document = {
-        ...data,
-        createdAt: new Date() // Add creation timestamp
-      };
-      
-      // Insert the document
-      const result = await collection.insertOne(document);
-      
-      if (!result.acknowledged) {
-        throw new Error("Failed to insert document");
-      }
-      
-      // Return the inserted document with its _id
-      return { 
-        _id: result.insertedId,
-        ...document 
-      };
-    } catch (error) {
-      throw error;
-    }
-  });
-}
-
-/**
- * Updates an existing record in the specified database and collection
- * @param db Database name
- * @param table Collection name
- * @param recordId ID of the record to update
- * @param data Fields to update in the record
- * @returns The updated document
- */
-export async function updateRecord(db: string, table: string, recordId: string, data: Record<string, any>): Promise<any> {
-  return mongoProvider.withConnection(async (mongoClient) => {
-    try {
-      const database = mongoClient.db(db);
-      const collection = database.collection(table);
-      
-      // Prepare the document for update
-      const updateData = {
-        ...data,
-        updatedAt: new Date() // Add update timestamp
-      };
-      
-      // Convert string ID to ObjectId
-      const objectId = new ObjectId(recordId);
-      
-      // Execute the update operation
-      const result = await collection.findOneAndUpdate(
-        { _id: objectId },
-        { $set: updateData },
-        { returnDocument: 'after' } // Return the document after update
-      );
-      
-      if (!result) {
-        throw new Error("Record not found or update failed");
-      }
-      
-      // Return the updated document
-      return result;
-    } catch (error) {
-      console.error(`Error updating record: Database: "${db}", Table: "${table}", _id: "${recordId}": `, error);
       throw error;
     }
   });

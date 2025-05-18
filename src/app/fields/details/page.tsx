@@ -1,4 +1,4 @@
-import { FetchApiKey, fetchRecordById, getTenantIdFromConfigurationId } from "../../service-clients/wize-database-service-client";
+import { FetchApiKey, fetchRecordById, fetchTenantId } from "../../service-clients/wize-database-service-client";
 import { FetchFieldNames, FetchRecordById } from "../../service-clients/wize-api-service-client";
 import FetchFieldsDataButton from "./FetchFieldsDataButton";
 import EditRecordButton from "./EditRecordButton";
@@ -34,7 +34,7 @@ export default async function RecordDetailsPage({ searchParams }: { searchParams
       record = await fetchRecordById(db, table, recordId, '', true);
     } else {
       // For non-admin users, get the tenant ID and filter by it
-      const tenantId = await getTenantIdFromConfigurationId(selectedClient.value);
+      const tenantId = await fetchTenantId(selectedClient.value);
       if (!tenantId) {
         throw new Error("Tenant ID is null. Unable to fetch the record.");
       }
